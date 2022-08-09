@@ -7,7 +7,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RentalService {
 
-    private final PriceCalculator priceCalculator;
     private final LoyaltyPointsCalculator loyaltyPointsCalculator;
 
     public Statement createStatement(List<Rental> rentals) {
@@ -18,7 +17,7 @@ public class RentalService {
 
     private double getTotalValue(List<Rental> rentals) {
         return rentals.stream()
-                .mapToDouble(rental -> priceCalculator.getValueFor(rental.getType(), rental.periodInDays()))
+                .mapToDouble(rental -> rental.getType().getValueFor(rental.periodInDays()))
                 .sum();
     }
 

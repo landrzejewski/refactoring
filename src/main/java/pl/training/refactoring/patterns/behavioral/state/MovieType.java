@@ -1,4 +1,4 @@
-package pl.training.refactoring.newmovies;
+package pl.training.refactoring.patterns.behavioral.state;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

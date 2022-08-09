@@ -18,3 +18,10 @@ Założenia:
 - Plansza ma rozmiar 3 x 3 pola
 - Gracze zajmują na przemian wolne pola, stawiając na nich swój znak (kółko lub krzyżyk)
 - Gra kończy się, kiedy wszystkie pola zostaną zajęte lub jeden z graczy zajmie sekwencję wygrywającą (kolumna, wiersz lub przekątna)
+
+
+Linki:
+https://sourcemaking.com/refactoring
+https://java-design-patterns.com/patterns
+https://github.com/iluwatar/java-design-patterns
+https://github.com/iluwatar/programming-principles
