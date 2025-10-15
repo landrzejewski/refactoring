@@ -1,10 +1,10 @@
 package pl.training.refactoring.creational.builder;
 
-public class Director {
+public class ServiceDirector {
 
     private final ConnectionUrlBuilder connectionUrlBuilder;
 
-    public Director(ConnectionUrlBuilder connectionUrlBuilder) {
+    public ServiceDirector(ConnectionUrlBuilder connectionUrlBuilder) {
         this.connectionUrlBuilder = connectionUrlBuilder;
     }
 
