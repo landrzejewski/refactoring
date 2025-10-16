@@ -2,12 +2,15 @@ package pl.training.refactoring.patterns.creational.singleton;
 
 public class Logger {
 
-    private static final Logger LOGGER = new Logger();
+    private static Logger LOGGER;
 
     private Logger() {
     }
 
-    public static Logger getInstance() {
+    public synchronized static Logger getInstance() {
+        if (LOGGER == null) {
+            LOGGER = new Logger();
+        }
         return LOGGER;
     }
 
