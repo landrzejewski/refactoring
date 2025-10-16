@@ -21,3 +21,35 @@
 21. Your app supports multiple sorting algorithms. Based on the size and type of data, you want to select the best algorithm at runtime.
 22. You're building a game engine where all games follow the same basic steps: initialize, start, play, end. Some games define these steps differently. You want to define the skeleton algorithm, but allow parts of it to be overridden.
 23. You want to create multiple types of reports (e.g., for Employees, Products, Orders). Instead of changing these classes to add reporting logic, you want to "visit" each one and apply external logic.
+
+Answer
+1	Singleton	Ensures a class has only one instance and provides a global point of access.
+2	Factory Method	Defers instantiation to subclasses.
+3	Abstract Factory	Creates families of related objects without specifying concrete classes.
+4	Builder	Constructs complex objects step-by-step.
+5	Prototype	Clones existing objects without using their constructors.
+6	Adapter	Converts the interface of a class into one the client expects.
+7	Bridge	Decouples abstraction from its implementation.
+8	Composite	Treats individual objects and compositions of objects uniformly.
+9	Decorator	Adds responsibilities to objects dynamically.
+10	Facade	Provides a simplified interface to a complex system.
+11	Flyweight	Shares objects to support large numbers efficiently.
+12	Proxy	Controls access to another object (e.g., for lazy loading).
+13	Chain of Responsibility	Passes a request along a chain of handlers.
+14	Command	Encapsulates requests as objects.
+15	Interpreter	Evaluates language grammar or expressions.
+16	Iterator	Provides a way to access elements sequentially.
+17	Mediator	Centralizes communication between objects.
+18	Memento	Captures and restores object state.
+19	Observer	Notifies observers of state changes.
+20	State	Allows an object to alter behavior when its internal state changes.
+21	Strategy	Selects algorithm behavior at runtime.
+22	Template Method	Defines an algorithm's skeleton in a method.
+23	Visitor	Adds new operations to objects without modifying them.
+
+##################################################################
+
+Project: Online Shopping System (E-Commerce Platform)
+Overview:
+Design a simplified online shopping system. It should support user registration, product catalog,
+shopping cart, checkout process, order management, and admin controls.
