@@ -6,6 +6,7 @@ Założenia:
 - Wyrażenia w tekście powinny być unikalne
 
 
+
 Linki:
 https://sourcemaking.com/refactoring
 https://java-design-patterns.com/patterns
