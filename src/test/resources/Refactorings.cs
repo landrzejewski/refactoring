@@ -231,6 +231,88 @@ public class ReportGenerator
     }
 }
 
+/*
+ * SOLUTION: Template Method Pattern (GoF Behavioral)
+ * - Defines skeleton of algorithm in base class
+ * - Lets subclasses override specific steps without changing structure
+ */
+public abstract class DataExporter
+{
+    // Template method - sealed to prevent override
+    public void Export()
+    {
+        OpenFile();
+        WriteHeader();
+        WriteData();
+        CloseFile();
+    }
+
+    private void OpenFile()
+    {
+        Console.WriteLine($"Opening {GetFileName()}");
+    }
+
+    private void CloseFile()
+    {
+        Console.WriteLine("File closed");
+    }
+
+    // Abstract methods - subclasses must implement
+    protected abstract void WriteHeader();
+    protected abstract void WriteData();
+    protected abstract string GetFileName();
+}
+
+public class CustomerExporter : DataExporter
+{
+    private readonly List<Customer> _customers;
+
+    public CustomerExporter(List<Customer> customers)
+    {
+        _customers = customers;
+    }
+
+    protected override void WriteHeader()
+    {
+        Console.WriteLine("Name,Email,VIP");
+    }
+
+    protected override void WriteData()
+    {
+        foreach (var c in _customers)
+        {
+            Console.WriteLine($"{c.Name},{c.Email},{c.IsVIP}");
+        }
+    }
+
+    protected override string GetFileName() => "customers.csv";
+}
+
+public class ProductExporter : DataExporter
+{
+    private readonly List<Product> _products;
+
+    public ProductExporter(List<Product> products)
+    {
+        _products = products;
+    }
+
+    protected override void WriteHeader()
+    {
+        Console.WriteLine("Name,Price");
+    }
+
+    protected override void WriteData()
+    {
+        foreach (var p in _products)
+        {
+            Console.WriteLine($"{p.Name},{p.Price}");
+        }
+    }
+
+    protected override string GetFileName() => "products.csv";
+}
+
 
 // ============================================================================
 // Supporting Classes

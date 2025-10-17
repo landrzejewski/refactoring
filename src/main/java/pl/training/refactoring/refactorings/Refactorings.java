@@ -245,6 +245,144 @@ class BadCsvDataExporter {
     // More exportXXX methods with same structure...
 }
 
+/*
+ * SOLUTION: Template Method Pattern (GoF Behavioral)
+ * - Defines skeleton of algorithm in base class
+ * - Lets subclasses override specific steps without changing structure
+ * - Enforces consistent algorithm structure
+ * - "Hollywood Principle" - Don't call us, we'll call you
+ */
+
+// Abstract class defines the template
+abstract class DataExporter {
+    // Template method - defines algorithm structure (final to prevent override)
+    public final void export() {
+        openFile();
+        writeHeader();
+        writeData();
+        closeFile();
+    }
+
+    // Common steps with default implementation
+    private void openFile() {
+        System.out.println("Opening " + getFileName());
+    }
+
+    private void closeFile() {
+        System.out.println("File closed");
+    }
+
+    // Abstract methods - subclasses must implement (hooks)
+    protected abstract void writeHeader();
+    protected abstract void writeData();
+    protected abstract String getFileName();
+}
+
+// Concrete implementation for customers
+class CustomerExporter extends DataExporter {
+    private java.util.List<Customer> customers;
+
+    public CustomerExporter(java.util.List<Customer> customers) {
+        this.customers = customers;
+    }
+
+    protected void writeHeader() {
+        System.out.println("Name,Email,VIP");
+    }
+
+    protected void writeData() {
+        for (Customer c : customers) {
+            System.out.println(c.getName() + "," + c.getEmail() + "," + c.isVIP());
+        }
+    }
+
+    protected String getFileName() {
+        return "customers.csv";
+    }
+}
+
+// Concrete implementation for products
+class ProductExporter extends DataExporter {
+    private java.util.List<Product> products;
+
+    public ProductExporter(java.util.List<Product> products) {
+        this.products = products;
+    }
+
+    protected void writeHeader() {
+        System.out.println("Name,Price");
+    }
+
+    protected void writeData() {
+        for (Product p : products) {
+            System.out.println(p.getName() + "," + p.getPrice());
+        }
+    }
+
+    protected String getFileName() {
+        return "products.csv";
+    }
+}
+
+// ============================================================================
+// EXAMPLE 4: Replace Constructors with Builder (Creational - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Complex object construction with many parameters
+ * - Telescoping constructors (multiple overloaded constructors)
+ * - Hard to remember parameter order
+ * - Cannot represent optional parameters well
+ * - Immutability hard to achieve
+ * - Error-prone when parameters have same type
+ */
+class BadHttpRequest {
+    private String url;
+    private String method;
+    private String body;
+    private java.util.Map<String, String> headers;
+    private int timeout;
+    private boolean followRedirects;
+
+    // Telescoping constructors - nightmare!
+    public BadHttpRequest(String url) {
+        this(url, "GET");
+    }
+
+    public BadHttpRequest(String url, String method) {
+        this(url, method, null);
+    }
+
+    public BadHttpRequest(String url, String method, String body) {
+        this(url, method, body, new java.util.HashMap<>());
+    }
+
+    public BadHttpRequest(String url, String method, String body,
+                          java.util.Map<String, String> headers) {
+        this(url, method, body, headers, 30000);
+    }
+
+    public BadHttpRequest(String url, String method, String body,
+                          java.util.Map<String, String> headers, int timeout) {
+        this(url, method, body, headers, timeout, true);
+    }
+
+    // The "real" constructor with all parameters
+    public BadHttpRequest(String url, String method, String body,
+                          java.util.Map<String, String> headers,
+                          int timeout, boolean followRedirects) {
+        this.url = url;
+        this.method = method;
+        this.body = body;
+        this.headers = headers;
+        this.timeout = timeout;
+        this.followRedirects = followRedirects;
+    }
+
+    // Usage is confusing:
+    // new BadHttpRequest("url", "POST", null, headers, 5000, false)
+    // What does 5000 mean? What is false?
+}
 
 // ============================================================================
 // Supporting classes for examples

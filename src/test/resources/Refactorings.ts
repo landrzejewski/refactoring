@@ -225,6 +225,179 @@ class BadCsvDataExporter {
     }
 }
 
+/*
+ * SOLUTION: Template Method Pattern (GoF Behavioral)
+ * - Defines skeleton of algorithm in base class
+ * - Lets subclasses override specific steps without changing structure
+ */
+abstract class DataExporter {
+    // Template method - defines algorithm structure
+    export(): void {
+        this.openFile();
+        this.writeHeader();
+        this.writeData();
+        this.closeFile();
+    }
+
+    private openFile(): void {
+        console.log(`Opening ${this.getFileName()}`);
+    }
+
+    private closeFile(): void {
+        console.log('File closed');
+    }
+
+    // Abstract methods - subclasses must implement
+    protected abstract writeHeader(): void;
+    protected abstract writeData(): void;
+    protected abstract getFileName(): string;
+}
+
+class CustomerExporter extends DataExporter {
+    constructor(private customers: Customer[]) {
+        super();
+    }
+
+    protected writeHeader(): void {
+        console.log('Name,Email,VIP');
+    }
+
+    protected writeData(): void {
+        for (const c of this.customers) {
+            console.log(`${c.name},${c.email},${c.isVIP}`);
+        }
+    }
+
+    protected getFileName(): string {
+        return 'customers.csv';
+    }
+}
+
+class ProductExporter extends DataExporter {
+    constructor(private products: Product[]) {
+        super();
+    }
+
+    protected writeHeader(): void {
+        console.log('Name,Price');
+    }
+
+    protected writeData(): void {
+        for (const p of this.products) {
+            console.log(`${p.name},${p.price}`);
+        }
+    }
+
+    protected getFileName(): string {
+        return 'products.csv';
+    }
+}
+
+// ============================================================================
+// EXAMPLE 4: Replace Constructors with Builder (Creational - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Complex object construction with many parameters
+ * - Many optional parameters lead to confusing constructors
+ * - Hard to remember parameter order
+ * - Cannot represent optional parameters well
+ */
+class BadHttpRequest {
+    constructor(
+        public readonly url: string,
+        public readonly method: string = 'GET',
+        public readonly body?: string,
+        public readonly headers: Record<string, string> = {},
+        public readonly timeout: number = 30000,
+        public readonly followRedirects: boolean = true
+    ) {
+        // TypeScript default params help but still messy
+        // new BadHttpRequest('url', 'POST', undefined, {}, 5000, false)
+        // What does 5000 mean? What is false?
+    }
+}
+
+/*
+ * SOLUTION: Builder Pattern (GoF Creational)
+ * - Separates construction of complex object from its representation
+ * - Provides fluent, readable API
+ * - Easy to add new optional parameters
+ */
+class HttpRequest {
+    constructor(
+        public readonly url: string,
+        public readonly method: string,
+        public readonly body?: string,
+        public readonly headers?: Readonly<Record<string, string>>,
+        public readonly timeout?: number,
+        public readonly followRedirects?: boolean
+    ) {}
+
+    static builder(url: string): HttpRequestBuilder {
+        return new HttpRequestBuilder(url);
+    }
+}
+
+class HttpRequestBuilder {
+    private method: string = 'GET';
+    private body?: string;
+    private headers: Record<string, string> = {};
+    private timeout: number = 30000;
+    private followRedirects: boolean = true;
+
+    constructor(private url: string) {}
+
+    // Fluent interface - returns this for chaining
+    withMethod(method: string): this {
+        this.method = method;
+        return this;
+    }
+
+    withBody(body: string): this {
+        this.body = body;
+        return this;
+    }
+
+    withHeader(key: string, value: string): this {
+        this.headers[key] = value;
+        return this;
+    }
+
+    withTimeout(timeout: number): this {
+        this.timeout = timeout;
+        return this;
+    }
+
+    withFollowRedirects(follow: boolean): this {
+        this.followRedirects = follow;
+        return this;
+    }
+
+    build(): HttpRequest {
+        if (!this.url) {
+            throw new Error('URL is required');
+        }
+
+        return new HttpRequest(
+            this.url,
+            this.method,
+            this.body,
+            { ...this.headers },
+            this.timeout,
+            this.followRedirects
+        );
+    }
+}
+
+// Usage:
+// const request = HttpRequest.builder('http://api.com')
+//     .withMethod('POST')
+//     .withBody('{"name":"John"}')
+//     .withHeader('Content-Type', 'application/json')
+//     .withTimeout(5000)
+//     .build();
+
 
 // ============================================================================
 // Supporting Types and Classes
