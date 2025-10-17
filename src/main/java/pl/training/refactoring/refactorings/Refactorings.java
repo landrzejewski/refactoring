@@ -5,7 +5,9 @@ package pl.training.refactoring.refactorings;
 // ============================================================================
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
  * PROBLEM: Multiple conditionals scattered throughout the code
@@ -340,7 +342,7 @@ class BadHttpRequest {
     private String url;
     private String method;
     private String body;
-    private java.util.Map<String, String> headers;
+    private Map<String, String> headers;
     private int timeout;
     private boolean followRedirects;
 
@@ -383,6 +385,171 @@ class BadHttpRequest {
     // new BadHttpRequest("url", "POST", null, headers, 5000, false)
     // What does 5000 mean? What is false?
 }
+
+/*
+ * SOLUTION: Builder Pattern (GoF Creational)
+ * - Separates construction of complex object from its representation
+ * - Same construction process can create different representations
+ * - Provides fluent, readable API
+ * - Easy to add new optional parameters
+ * - Can enforce invariants before object creation
+ */
+class HttpRequest {
+    // Immutable fields
+    private final String url;
+    private final String method;
+    private final String body;
+    private final java.util.Map<String, String> headers;
+    private final int timeout;
+    private final boolean followRedirects;
+
+    // Private constructor - can only be called by Builder
+    private HttpRequest(Builder builder) {
+        this.url = builder.url;
+        this.method = builder.method;
+        this.body = builder.body;
+        this.headers = new java.util.HashMap<>(builder.headers);
+        this.timeout = builder.timeout;
+        this.followRedirects = builder.followRedirects;
+    }
+
+    // Static nested Builder class
+    public static class Builder {
+        // Required parameters
+        private final String url;
+
+        // Optional parameters with defaults
+        private String method = "GET";
+        private String body = null;
+        private Map<String, String> headers = new HashMap<>();
+        private int timeout = 30000;
+        private boolean followRedirects = true;
+
+        // Constructor with required parameters only
+        public Builder(String url) {
+            this.url = url;
+        }
+
+        // Fluent setter methods return Builder for chaining
+        public Builder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public Builder body(String body) {
+            this.body = body;
+            return this;
+        }
+
+        public Builder header(String key, String value) {
+            this.headers.put(key, value);
+            return this;
+        }
+
+        public Builder timeout(int timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
+        public Builder followRedirects(boolean follow) {
+            this.followRedirects = follow;
+            return this;
+        }
+
+        // Build method creates the actual object
+        public HttpRequest build() {
+            // Can validate here before creating object
+            if (url == null || url.isEmpty()) {
+                throw new IllegalStateException("URL is required");
+            }
+            return new HttpRequest(this);
+        }
+    }
+
+    // Getters only - immutable object
+    public String getUrl() { return url; }
+    public String getMethod() { return method; }
+    public String getBody() { return body; }
+}
+
+// Usage is now clean and readable:
+// HttpRequest request = new HttpRequest.Builder("http://api.com")
+//     .method("POST")
+//     .body("{\"name\":\"John\"}")
+//     .header("Content-Type", "application/json")
+//     .timeout(5000)
+//     .build();
+
+// ============================================================================
+// EXAMPLE 5: Introduce Composite (Structural - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Need to treat individual objects and compositions uniformly
+ * - Client code must know if dealing with single item or collection
+ * - Lots of instanceof checks and type casting
+ * - Hard to add new composite types
+ * - Recursive structures hard to implement
+ */
+class BadFileSystem {
+    public long getSize(Object item) {
+        if (item instanceof File) {
+            // Handle single file
+            return ((File) item).getSize();
+        } else if (item instanceof Directory) {
+            // Handle directory - must iterate
+            long total = 0;
+            Directory dir = (Directory) item;
+            for (Object child : dir.getChildren()) {
+                total += getSize(child); // Recursion with type checking
+            }
+            return total;
+        }
+        return 0;
+    }
+
+    public void display(Object item, int indent) {
+        String spaces = " ".repeat(indent);
+
+        if (item instanceof File) {
+            File file = (File) item;
+            System.out.println(spaces + file.getName() + " (" + file.getSize() + ")");
+        } else if (item instanceof Directory) {
+            Directory dir = (Directory) item;
+            System.out.println(spaces + dir.getName() + "/");
+            for (Object child : dir.getChildren()) {
+                display(child, indent + 2); // More type checking
+            }
+        }
+    }
+}
+
+class File {
+    private String name;
+    private long size;
+
+    public File(String name, long size) {
+        this.name = name;
+        this.size = size;
+    }
+
+    public String getName() { return name; }
+    public long getSize() { return size; }
+}
+
+class Directory {
+    private String name;
+    private java.util.List<Object> children = new java.util.ArrayList<>();
+
+    public Directory(String name) {
+        this.name = name;
+    }
+
+    public void add(Object item) { children.add(item); }
+    public String getName() { return name; }
+    public java.util.List<Object> getChildren() { return children; }
+}
+
 
 // ============================================================================
 // Supporting classes for examples
