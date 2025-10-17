@@ -4,6 +4,9 @@ package pl.training.refactoring.refactorings;
 // EXAMPLE 1: Replace Conditional with Strategy Pattern (Behavioral - GoF)
 // ============================================================================
 
+import java.util.ArrayList;
+import java.util.List;
+
 /*
  * PROBLEM: Multiple conditionals scattered throughout the code
  * - Hard to add new loan types (violates Open/Closed Principle)
@@ -134,6 +137,112 @@ class PdfCell {
     private String content;
     public PdfCell(String content) { this.content = content; }
     public String getContent() { return content; }
+}
+
+/*
+ * SOLUTION: Adapter Pattern (GoF Structural)
+ * - Converts interface of a class into another interface clients expect
+ * - Lets classes work together that couldn't otherwise because of incompatible interfaces
+ * - Encapsulates conversion logic in one place
+ */
+
+// Target interface - what our client expects
+interface ReportWriter {
+    void write(List<String[]> data);
+    void save(String filename);
+}
+
+// Adapter - bridges the gap between interfaces
+class PdfReportAdapter implements ReportWriter {
+    private ThirdPartyPdfLib pdfLib;
+
+    public PdfReportAdapter() {
+        this.pdfLib = new ThirdPartyPdfLib();
+    }
+
+    // Adapter converts from our format to PDF library format
+    public void write(List<String[]> data) {
+        List<PdfRow> pdfRows = convertToPdfRows(data);
+        pdfLib.createDocument(pdfRows);
+    }
+
+    public void save(String filename) {
+        pdfLib.save(filename);
+    }
+
+    // Conversion logic encapsulated in adapter
+    private List<PdfRow> convertToPdfRows(List<String[]> data) {
+        List<PdfRow> pdfRows = new ArrayList<>();
+        for (String[] row : data) {
+            PdfRow pdfRow = new PdfRow();
+            for (String cell : row) {
+                pdfRow.addCell(new PdfCell(cell));
+            }
+            pdfRows.add(pdfRow);
+        }
+        return pdfRows;
+    }
+}
+
+// Now client code is clean and simple
+class ReportGenerator {
+    private ReportWriter writer;
+
+    public ReportGenerator(ReportWriter writer) {
+        this.writer = writer; // Can use any writer implementation
+    }
+
+    public void generateReport(java.util.List<String[]> data) {
+        writer.write(data); // No conversion code!
+        writer.save("report.pdf");
+    }
+}
+
+// ============================================================================
+// EXAMPLE 3: Introduce Template Method (Behavioral - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Similar algorithms with duplicated structure
+ * - Copy-paste programming leads to duplication
+ * - Hard to maintain - changes needed in multiple places
+ * - Algorithm structure not explicit
+ * - Difficult to enforce consistent process
+ */
+class BadCsvDataExporter {
+    public void exportCustomers(java.util.List<Customer> customers) {
+        // Open file
+        System.out.println("Opening customers.csv");
+
+        // Write header
+        System.out.println("Name,Email,VIP");
+
+        // Write data - customer specific
+        for (Customer c : customers) {
+            System.out.println(c.getName() + "," + c.getEmail() + "," + c.isVIP());
+        }
+
+        // Close file
+        System.out.println("File closed");
+    }
+
+    public void exportProducts(java.util.List<Product> products) {
+        // Open file - DUPLICATED!
+        System.out.println("Opening products.csv");
+
+        // Write header - DUPLICATED STRUCTURE!
+        System.out.println("Name,Price");
+
+        // Write data - product specific
+        for (Product p : products) {
+            System.out.println(p.getName() + "," + p.getPrice());
+        }
+
+        // Close file - DUPLICATED!
+        System.out.println("File closed");
+    }
+
+    // More exportXXX methods with same structure...
 }
 
 

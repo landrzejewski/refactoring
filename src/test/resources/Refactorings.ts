@@ -137,6 +137,94 @@ class PdfCell {
     constructor(public readonly content: string) {}
 }
 
+/*
+ * SOLUTION: Adapter Pattern (GoF Structural)
+ * - Converts interface of a class into another interface clients expect
+ * - Lets classes work together that couldn't otherwise
+ * - Encapsulates conversion logic in one place
+ */
+
+// Target interface - what our client expects
+interface ReportWriter {
+    write(data: string[][]): void;
+    save(filename: string): void;
+}
+
+// Adapter - bridges the gap between interfaces
+class PdfReportAdapter implements ReportWriter {
+    private pdfLib: ThirdPartyPdfLib;
+
+    constructor() {
+        this.pdfLib = new ThirdPartyPdfLib();
+    }
+
+    write(data: string[][]): void {
+        const pdfRows = this.convertToPdfRows(data);
+        this.pdfLib.createDocument(pdfRows);
+    }
+
+    save(filename: string): void {
+        this.pdfLib.save(filename);
+    }
+
+    private convertToPdfRows(data: string[][]): PdfRow[] {
+        const pdfRows: PdfRow[] = [];
+        for (const row of data) {
+            const pdfRow = new PdfRow();
+            for (const cell of row) {
+                pdfRow.addCell(new PdfCell(cell));
+            }
+            pdfRows.push(pdfRow);
+        }
+        return pdfRows;
+    }
+}
+
+// Now client code is clean
+class ReportGenerator {
+    constructor(private writer: ReportWriter) {}
+
+    generateReport(data: string[][]): void {
+        this.writer.write(data);
+        this.writer.save('report.pdf');
+    }
+}
+
+// ============================================================================
+// EXAMPLE 3: Introduce Template Method (Behavioral - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Similar algorithms with duplicated structure
+ * - Copy-paste programming leads to duplication
+ * - Hard to maintain - changes needed in multiple places
+ * - Algorithm structure not explicit
+ */
+class BadCsvDataExporter {
+    exportCustomers(customers: Customer[]): void {
+        console.log('Opening customers.csv');
+        console.log('Name,Email,VIP');
+
+        for (const c of customers) {
+            console.log(`${c.name},${c.email},${c.isVIP}`);
+        }
+
+        console.log('File closed');
+    }
+
+    exportProducts(products: Product[]): void {
+        // DUPLICATED structure!
+        console.log('Opening products.csv');
+        console.log('Name,Price');
+
+        for (const p of products) {
+            console.log(`${p.name},${p.price}`);
+        }
+
+        console.log('File closed');
+    }
+}
+
 
 // ============================================================================
 // Supporting Types and Classes

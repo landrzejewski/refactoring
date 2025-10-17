@@ -163,6 +163,75 @@ public class PdfCell
     public PdfCell(string content) => Content = content;
 }
 
+/*
+ * SOLUTION: Adapter Pattern (GoF Structural)
+ * - Converts interface of a class into another interface clients expect
+ * - Lets classes work together that couldn't otherwise
+ * - Encapsulates conversion logic in one place
+ */
+
+// Target interface - what our client expects
+public interface IReportWriter
+{
+    void Write(List<string[]> data);
+    void Save(string filename);
+}
+
+// Adapter - bridges the gap between interfaces
+public class PdfReportAdapter : IReportWriter
+{
+    private readonly ThirdPartyPdfLib _pdfLib;
+
+    public PdfReportAdapter()
+    {
+        _pdfLib = new ThirdPartyPdfLib();
+    }
+
+    public void Write(List<string[]> data)
+    {
+        var pdfRows = ConvertToPdfRows(data);
+        _pdfLib.CreateDocument(pdfRows);
+    }
+
+    public void Save(string filename)
+    {
+        _pdfLib.Save(filename);
+    }
+
+    private List<PdfRow> ConvertToPdfRows(List<string[]> data)
+    {
+        var pdfRows = new List<PdfRow>();
+        foreach (var row in data)
+        {
+            var pdfRow = new PdfRow();
+            foreach (var cell in row)
+            {
+                pdfRow.AddCell(new PdfCell(cell));
+            }
+            pdfRows.Add(pdfRow);
+        }
+        return pdfRows;
+    }
+}
+
+// Now client code is clean
+public class ReportGenerator
+{
+    private readonly IReportWriter _writer;
+
+    public ReportGenerator(IReportWriter writer)
+    {
+        _writer = writer;
+    }
+
+    public void GenerateReport(List<string[]> data)
+    {
+        _writer.Write(data);
+        _writer.Save("report.pdf");
+    }
+}
+
+
 // ============================================================================
 // Supporting Classes
 // ============================================================================
