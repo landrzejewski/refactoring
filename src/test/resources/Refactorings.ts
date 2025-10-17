@@ -400,6 +400,34 @@ class HttpRequestBuilder {
 
 
 // ============================================================================
+// EXAMPLE 5: Introduce Composite (Structural - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Need to treat individual objects and compositions uniformly
+ * - Client must know if dealing with single item or collection
+ * - Lots of type checking
+ */
+class BadFileSystem {
+    getSize(item: any): number {
+        if ('size' in item && typeof item.size === 'number') {
+            // It's a file
+            return item.size;
+        } else if ('children' in item && Array.isArray(item.children)) {
+            // It's a directory
+            let total = 0;
+            for (const child of item.children) {
+                total += this.getSize(child);
+            }
+            return total;
+        }
+        return 0;
+    }
+}
+
+
+
+// ============================================================================
 // Supporting Types and Classes
 // ============================================================================
 

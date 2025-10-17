@@ -314,6 +314,151 @@ public class ProductExporter : DataExporter
 }
 
 
+/*
+ * SOLUTION: Builder Pattern (GoF Creational)
+ * - Separates construction of complex object from its representation
+ * - Provides fluent, readable API
+ * - Easy to add new optional parameters
+ */
+public class HttpRequest
+{
+    public string Url { get; }
+    public string Method { get; }
+    public string Body { get; }
+    public IReadOnlyDictionary<string, string> Headers { get; }
+    public int Timeout { get; }
+    public bool FollowRedirects { get; }
+
+    private HttpRequest(Builder builder)
+    {
+        Url = builder.Url;
+        Method = builder.Method;
+        Body = builder.Body;
+        Headers = new Dictionary<string, string>(builder.Headers);
+        Timeout = builder.Timeout;
+        FollowRedirects = builder.FollowRedirects;
+    }
+
+    public class Builder
+    {
+        // Required parameter
+        public string Url { get; }
+
+        // Optional parameters with defaults
+        public string Method { get; private set; } = "GET";
+        public string Body { get; private set; }
+        public Dictionary<string, string> Headers { get; } = new();
+        public int Timeout { get; private set; } = 30000;
+        public bool FollowRedirects { get; private set; } = true;
+
+        public Builder(string url)
+        {
+            Url = url;
+        }
+
+        // Fluent interface
+        public Builder WithMethod(string method)
+        {
+            Method = method;
+            return this;
+        }
+
+        public Builder WithBody(string body)
+        {
+            Body = body;
+            return this;
+        }
+
+        public Builder WithHeader(string key, string value)
+        {
+            Headers[key] = value;
+            return this;
+        }
+
+        public Builder WithTimeout(int timeout)
+        {
+            Timeout = timeout;
+            return this;
+        }
+
+        public Builder WithFollowRedirects(bool follow)
+        {
+            FollowRedirects = follow;
+            return this;
+        }
+
+        public HttpRequest Build()
+        {
+            if (string.IsNullOrEmpty(Url))
+                throw new InvalidOperationException("URL is required");
+
+            return new HttpRequest(this);
+        }
+    }
+}
+
+// Usage:
+// var request = new HttpRequest.Builder("http://api.com")
+//     .WithMethod("POST")
+//     .WithBody("{\"name\":\"John\"}")
+//     .WithHeader("Content-Type", "application/json")
+//     .WithTimeout(5000)
+//     .Build();
+
+// ============================================================================
+// EXAMPLE 5: Introduce Composite (Structural - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Need to treat individual objects and compositions uniformly
+ * - Client must know if dealing with single item or collection
+ * - Lots of type checking and casting
+ */
+public class BadFileSystem
+{
+    public long GetSize(object item)
+    {
+        if (item is File file)
+        {
+            return file.Size;
+        }
+        else if (item is Directory dir)
+        {
+            long total = 0;
+            foreach (var child in dir.Children)
+            {
+                total += GetSize(child);
+            }
+            return total;
+        }
+        return 0;
+    }
+}
+
+public class File
+{
+    public string Name { get; }
+    public long Size { get; }
+
+    public File(string name, long size)
+    {
+        Name = name;
+        Size = size;
+    }
+}
+
+public class Directory
+{
+    public string Name { get; }
+    public List<object> Children { get; } = new();
+
+    public Directory(string name)
+    {
+        Name = name;
+    }
+}
+
+
 // ============================================================================
 // Supporting Classes
 // ============================================================================
