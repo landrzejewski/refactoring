@@ -37,6 +37,105 @@ class BadLoan {
     private double riskFactor() { return rating * 0.01; }
 }
 
+/*
+ * SOLUTION: Strategy Pattern (GoF Behavioral)
+ * - Defines family of algorithms, encapsulates each one, makes them interchangeable
+ * - Strategy lets algorithm vary independently from clients that use it
+ */
+interface CapitalStrategy {
+    double calculateCapital(Loan loan);
+}
+
+class TermLoanStrategy implements CapitalStrategy {
+    public double calculateCapital(Loan loan) {
+        return loan.getNotional() * loan.duration() * loan.riskFactor();
+    }
+}
+
+class RevolverStrategy implements CapitalStrategy {
+    public double calculateCapital(Loan loan) {
+        return (loan.getNotional() * 0.5 + loan.getOutstanding())
+                * loan.duration() * loan.riskFactor();
+    }
+}
+
+class Loan {
+    private CapitalStrategy strategy;
+    private double notional;
+    private double outstanding;
+    private int rating;
+
+    public Loan(CapitalStrategy strategy, double notional, double outstanding, int rating) {
+        this.strategy = strategy;
+        this.notional = notional;
+        this.outstanding = outstanding;
+        this.rating = rating;
+    }
+
+    public double calculateCapital() {
+        return strategy.calculateCapital(this);
+    }
+
+    public double getNotional() { return notional; }
+    public double getOutstanding() { return outstanding; }
+    double duration() { return 1.5; }
+    double riskFactor() { return rating * 0.01; }
+}
+
+// ============================================================================
+// EXAMPLE 2: Extract Adapter (Structural - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Incompatible interfaces force ugly code
+ * - Client expects one interface but third-party library provides another
+ * - Conversion logic scattered throughout client code
+ * - Hard to switch to different library
+ * - Code duplication when multiple clients need same conversion
+ */
+class BadReportGenerator {
+    public void generateReport(java.util.List<String[]> data) {
+        // We need to use third-party PDF library, but it expects different format
+        ThirdPartyPdfLib pdfLib = new ThirdPartyPdfLib();
+
+        // Ugly conversion code scattered in client
+        java.util.List<PdfRow> pdfRows = new java.util.ArrayList<>();
+        for (String[] row : data) {
+            PdfRow pdfRow = new PdfRow();
+            for (String cell : row) {
+                pdfRow.addCell(new PdfCell(cell));
+            }
+            pdfRows.add(pdfRow);
+        }
+
+        // Finally can use the library
+        pdfLib.createDocument(pdfRows);
+        pdfLib.save("report.pdf");
+    }
+}
+
+// Third-party library with incompatible interface
+class ThirdPartyPdfLib {
+    public void createDocument(java.util.List<PdfRow> rows) {
+        System.out.println("Creating PDF with " + rows.size() + " rows");
+    }
+    public void save(String filename) {
+        System.out.println("Saving to " + filename);
+    }
+}
+
+class PdfRow {
+    private java.util.List<PdfCell> cells = new java.util.ArrayList<>();
+    public void addCell(PdfCell cell) { cells.add(cell); }
+    public java.util.List<PdfCell> getCells() { return cells; }
+}
+
+class PdfCell {
+    private String content;
+    public PdfCell(String content) { this.content = content; }
+    public String getContent() { return content; }
+}
+
 
 // ============================================================================
 // Supporting classes for examples

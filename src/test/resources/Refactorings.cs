@@ -42,6 +42,126 @@ public class BadLoan
     private double RiskFactor() => _rating * 0.01;
 }
 
+/*
+ * SOLUTION: Strategy Pattern (GoF Behavioral)
+ * - Defines family of algorithms, encapsulates each one, makes them interchangeable
+ * - Strategy lets algorithm vary independently from clients that use it
+ */
+public interface ICapitalStrategy
+{
+    double CalculateCapital(Loan loan);
+}
+
+public class TermLoanStrategy : ICapitalStrategy
+{
+    public double CalculateCapital(Loan loan)
+    {
+        return loan.Notional * loan.Duration() * loan.RiskFactor();
+    }
+}
+
+public class RevolverStrategy : ICapitalStrategy
+{
+    public double CalculateCapital(Loan loan)
+    {
+        return (loan.Notional * 0.5 + loan.Outstanding)
+               * loan.Duration() * loan.RiskFactor();
+    }
+}
+
+public class AdvisedLineStrategy : ICapitalStrategy
+{
+    public double CalculateCapital(Loan loan)
+    {
+        return loan.Notional * 0.3 * loan.Duration() * loan.RiskFactor();
+    }
+}
+
+public class Loan
+{
+    private readonly ICapitalStrategy _strategy;
+
+    public double Notional { get; }
+    public double Outstanding { get; }
+    private int Rating { get; }
+
+    public Loan(ICapitalStrategy strategy, double notional, double outstanding, int rating)
+    {
+        _strategy = strategy;
+        Notional = notional;
+        Outstanding = outstanding;
+        Rating = rating;
+    }
+
+    public double CalculateCapital()
+    {
+        return _strategy.CalculateCapital(this);
+    }
+
+    public double Duration() => 1.5;
+    public double RiskFactor() => Rating * 0.01;
+}
+
+// ============================================================================
+// EXAMPLE 2: Extract Adapter (Structural - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Incompatible interfaces force ugly code
+ * - Client expects one interface but third-party library provides another
+ * - Conversion logic scattered throughout client code
+ * - Hard to switch to different library
+ * - Code duplication when multiple clients need same conversion
+ */
+public class BadReportGenerator
+{
+    public void GenerateReport(List<string[]> data)
+    {
+        var pdfLib = new ThirdPartyPdfLib();
+
+        // Ugly conversion code scattered in client
+        var pdfRows = new List<PdfRow>();
+        foreach (var row in data)
+        {
+            var pdfRow = new PdfRow();
+            foreach (var cell in row)
+            {
+                pdfRow.AddCell(new PdfCell(cell));
+            }
+            pdfRows.Add(pdfRow);
+        }
+
+        pdfLib.CreateDocument(pdfRows);
+        pdfLib.Save("report.pdf");
+    }
+}
+
+// Third-party library with incompatible interface
+public class ThirdPartyPdfLib
+{
+    public void CreateDocument(List<PdfRow> rows)
+    {
+        Console.WriteLine($"Creating PDF with {rows.Count} rows");
+    }
+
+    public void Save(string filename)
+    {
+        Console.WriteLine($"Saving to {filename}");
+    }
+}
+
+public class PdfRow
+{
+    private readonly List<PdfCell> _cells = new();
+    public void AddCell(PdfCell cell) => _cells.Add(cell);
+    public List<PdfCell> GetCells() => _cells;
+}
+
+public class PdfCell
+{
+    public string Content { get; }
+    public PdfCell(string content) => Content = content;
+}
 
 // ============================================================================
 // Supporting Classes

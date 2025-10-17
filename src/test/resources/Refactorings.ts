@@ -37,6 +37,106 @@ class BadLoan {
     private riskFactor(): number { return this.rating * 0.01; }
 }
 
+/*
+ * SOLUTION: Strategy Pattern (GoF Behavioral)
+ * - Defines family of algorithms, encapsulates each one, makes them interchangeable
+ * - Strategy lets algorithm vary independently from clients that use it
+ */
+interface CapitalStrategy {
+    calculateCapital(loan: Loan): number;
+}
+
+class TermLoanStrategy implements CapitalStrategy {
+    calculateCapital(loan: Loan): number {
+        return loan.notional * loan.duration() * loan.riskFactor();
+    }
+}
+
+class RevolverStrategy implements CapitalStrategy {
+    calculateCapital(loan: Loan): number {
+        return (loan.notional * 0.5 + loan.outstanding)
+            * loan.duration() * loan.riskFactor();
+    }
+}
+
+class AdvisedLineStrategy implements CapitalStrategy {
+    calculateCapital(loan: Loan): number {
+        return loan.notional * 0.3 * loan.duration() * loan.riskFactor();
+    }
+}
+
+class Loan {
+    constructor(
+        private strategy: CapitalStrategy,
+        public readonly notional: number,
+        public readonly outstanding: number,
+        private rating: number
+    ) {}
+
+    calculateCapital(): number {
+        return this.strategy.calculateCapital(this);
+    }
+
+    duration(): number { return 1.5; }
+    riskFactor(): number { return this.rating * 0.01; }
+}
+
+// ============================================================================
+// EXAMPLE 2: Extract Adapter (Structural - GoF)
+// ============================================================================
+
+/*
+ * PROBLEM: Incompatible interfaces force ugly code
+ * - Client expects one interface but third-party library provides another
+ * - Conversion logic scattered throughout client code
+ * - Hard to switch to different library
+ */
+class BadReportGenerator {
+    generateReport(data: string[][]): void {
+        const pdfLib = new ThirdPartyPdfLib();
+
+        // Ugly conversion code scattered in client
+        const pdfRows: PdfRow[] = [];
+        for (const row of data) {
+            const pdfRow = new PdfRow();
+            for (const cell of row) {
+                pdfRow.addCell(new PdfCell(cell));
+            }
+            pdfRows.push(pdfRow);
+        }
+
+        pdfLib.createDocument(pdfRows);
+        pdfLib.save('report.pdf');
+    }
+}
+
+// Third-party library with incompatible interface
+class ThirdPartyPdfLib {
+    createDocument(rows: PdfRow[]): void {
+        console.log(`Creating PDF with ${rows.length} rows`);
+    }
+
+    save(filename: string): void {
+        console.log(`Saving to ${filename}`);
+    }
+}
+
+class PdfRow {
+    private cells: PdfCell[] = [];
+
+    addCell(cell: PdfCell): void {
+        this.cells.push(cell);
+    }
+
+    getCells(): PdfCell[] {
+        return this.cells;
+    }
+}
+
+class PdfCell {
+    constructor(public readonly content: string) {}
+}
+
 
 // ============================================================================
 // Supporting Types and Classes
