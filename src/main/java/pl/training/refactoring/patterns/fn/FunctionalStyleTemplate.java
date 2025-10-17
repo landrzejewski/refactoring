@@ -4,9 +4,9 @@ import java.util.function.Consumer;
 
 public class FunctionalStyleTemplate {
     static class Processor {
-        void process(Consumer<String> step) {
+        void process(Consumer<String> ... step) {
             System.out.println("Start processing...");
-            step.accept("data");
+            step[0].accept("data");
             System.out.println("Finish processing!");
         }
     }

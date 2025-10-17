@@ -18,11 +18,11 @@ public class FunctionalStyleSingleton {
 
     static <T> Supplier<T> memoize(Supplier<T> supplier) {
         return new Supplier<T>() {
-            private volatile T instance;
+            private T instance;
             public T get() {
-                if (instance == null) {
-                    synchronized (this) {
-                        if (instance == null) instance = supplier.get();
+                synchronized (this) {
+                    if (instance == null) {
+                        instance = supplier.get();
                     }
                 }
                 return instance;

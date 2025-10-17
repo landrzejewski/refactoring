@@ -1,11 +1,10 @@
 package pl.training.refactoring.patterns.fn;
 
-import java.util.Arrays;
+import java.util.stream.Stream;
 
 public class FunctionalStyleIterator {
     public static void main(String[] args) {
-        Arrays.asList("one", "two", "three")
-              .stream()
+        Stream.of("one", "two", "three")
               .map(String::toUpperCase)
               .forEach(System.out::println);
     }

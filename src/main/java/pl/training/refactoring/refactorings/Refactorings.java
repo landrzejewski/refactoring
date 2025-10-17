@@ -4,6 +4,8 @@ package pl.training.refactoring.refactorings;
 // EXAMPLE 1: Replace Conditional with Strategy Pattern (Behavioral - GoF)
 // ============================================================================
 
+import java.util.Optional;
+
 /*
  * PROBLEM: Multiple conditionals scattered throughout the code
  * - Hard to add new loan types (violates Open/Closed Principle)

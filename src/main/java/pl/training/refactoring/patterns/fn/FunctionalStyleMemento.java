@@ -25,7 +25,7 @@ public class FunctionalStyleMemento {
     public static void main(String[] args) {
         Originator o = new Originator();
         o.setState("A");
-        Supplier<String> saved = o.save();
+        var saved = o.save();
         o.setState("B");
         o.restore(saved);
     }

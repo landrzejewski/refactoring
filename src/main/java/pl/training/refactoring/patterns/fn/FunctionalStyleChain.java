@@ -12,4 +12,5 @@ public class FunctionalStyleChain {
 
         System.out.println(chain.apply("Request"));
     }
+
 }
