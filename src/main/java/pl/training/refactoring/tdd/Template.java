@@ -1,4 +1,4 @@
-package pl.training.refactoring;
+package pl.training.refactoring.tdd;
 
 import java.util.Map;
 import java.util.regex.MatchResult;
