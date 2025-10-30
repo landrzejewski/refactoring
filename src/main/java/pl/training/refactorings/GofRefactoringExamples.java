@@ -8,8 +8,9 @@ import java.util.List;
 public class GofRefactoringExamples {
 
     public static void main(String[] args) {
-        //demonstrateSingletonPattern();
-        demonstrateFactoryMethodPattern();
+        // demonstrateSingletonPattern();
+        // demonstrateFactoryMethodPattern();
+        demonstrateStrategyPattern();
     }
 
     // ========================================
@@ -261,8 +262,8 @@ public class GofRefactoringExamples {
     // Abstract Factory definiujący factory method
     static interface DocumentFactory {
 
-       // Factory Method - podklasy decydują, jaki typ dokumentu utworzyć
-       Document createDocument(String content);
+        // Factory Method - podklasy decydują, jaki typ dokumentu utworzyć
+        Document createDocument(String content);
 
     }
 
@@ -349,6 +350,131 @@ public class GofRefactoringExamples {
 
     }
 
+    /**
+     * PO: Strategy Pattern
+     * Zalety:
+     * - Każdy algorytm w osobnej klasie (SRP)
+     * - Łatwe dodawanie nowych strategii
+     * - Możliwość zmiany strategii w runtime
+     * - Eliminacja instrukcji warunkowych
+     */
+    interface SortingStrategy {
+
+        void sort(List<Integer> data);
+
+    }
+
+    static class QuickSortStrategy implements SortingStrategy {
+
+        @Override
+        public void sort(List<Integer> data) {
+            System.out.println("Wykonuję QuickSort...");
+            quickSortImpl(data, 0, data.size() - 1);
+        }
+
+        private void quickSortImpl(List<Integer> data, int low, int high) {
+            if (low < high) {
+                int pi = partition(data, low, high);
+                quickSortImpl(data, low, pi - 1);
+                quickSortImpl(data, pi + 1, high);
+            }
+        }
+
+        private int partition(List<Integer> data, int low, int high) {
+            int pivot = data.get(high);
+            int i = low - 1;
+
+            for (int j = low; j < high; j++) {
+                if (data.get(j) < pivot) {
+                    i++;
+                    Collections.swap(data, i, j);
+                }
+            }
+            Collections.swap(data, i + 1, high);
+            return i + 1;
+        }
+    }
+
+    static class MergeSortStrategy implements SortingStrategy {
+
+        @Override
+        public void sort(List<Integer> data) {
+            System.out.println("Wykonuję MergeSort...");
+            if (data.size() > 1) {
+                mergeSortImpl(data, 0, data.size() - 1);
+            }
+        }
+
+        private void mergeSortImpl(List<Integer> data, int left, int right) {
+            if (left < right) {
+                int mid = (left + right) / 2;
+                mergeSortImpl(data, left, mid);
+                mergeSortImpl(data, mid + 1, right);
+                merge(data, left, mid, right);
+            }
+        }
+
+        private void merge(List<Integer> data, int left, int mid, int right) {
+            List<Integer> leftList = new ArrayList<>(data.subList(left, mid + 1));
+            List<Integer> rightList = new ArrayList<>(data.subList(mid + 1, right + 1));
+
+            int i = 0, j = 0, k = left;
+
+            while (i < leftList.size() && j < rightList.size()) {
+                if (leftList.get(i) <= rightList.get(j)) {
+                    data.set(k++, leftList.get(i++));
+                } else {
+                    data.set(k++, rightList.get(j++));
+                }
+            }
+
+            while (i < leftList.size()) {
+                data.set(k++, leftList.get(i++));
+            }
+
+            while (j < rightList.size()) {
+                data.set(k++, rightList.get(j++));
+            }
+        }
+
+    }
+
+    static class BubbleSortStrategy implements SortingStrategy {
+
+        @Override
+        public void sort(List<Integer> data) {
+            System.out.println("Wykonuję BubbleSort...");
+            int n = data.size();
+            for (int i = 0; i < n - 1; i++) {
+                for (int j = 0; j < n - i - 1; j++) {
+                    if (data.get(j) > data.get(j + 1)) {
+                        Collections.swap(data, j, j + 1);
+                    }
+                }
+            }
+        }
+
+    }
+
+    static class DataSorterAfter {
+
+        private SortingStrategy strategy;
+
+        public DataSorterAfter(SortingStrategy strategy) {
+            this.strategy = strategy;
+        }
+
+        // Możliwość zmiany strategii w runtime
+        public void setStrategy(SortingStrategy strategy) {
+            this.strategy = strategy;
+        }
+
+        public void sortData(List<Integer> data) {
+            strategy.sort(data);
+        }
+
+    }
+
     private static void demonstrateStrategyPattern() {
         System.out.println("\n=== STRATEGY PATTERN ===");
         var data = new ArrayList<>(Arrays.asList(64, 34, 25, 12, 22, 11, 90));
@@ -362,6 +488,89 @@ public class GofRefactoringExamples {
         sorter.setStrategy(new MergeSortStrategy());
         var data2 = new ArrayList<>(data);
         sorter.sortData(data2);
+        System.out.println("Posortowane dane: " + data2);
     }
+
+    // ========================================
+    // 4. OBSERVER PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Ścisłe powiązanie między podmiotem a obserwatorami
+     * Problemy:
+     * - Klasy są silnie sprzężone
+     * - Trudność w dodawaniu nowych obserwatorów
+     * - Naruszenie Dependency Inversion Principle
+     */
+    static class StockMarketBefore {
+
+        private double stockPrice;
+        private EmailNotifierBefore emailNotifier;
+        private SMSNotifierBefore smsNotifier;
+        private DashboardBefore dashboard;
+
+        public StockMarketBefore() {
+            // PROBLEM: Tworzenie konkretnych zależności
+            this.emailNotifier = new EmailNotifierBefore();
+            this.smsNotifier = new SMSNotifierBefore();
+            this.dashboard = new DashboardBefore();
+        }
+
+        public void setStockPrice(double price) {
+            this.stockPrice = price;
+            // PROBLEM: Bezpośrednie wywoływanie metod konkretnych klas
+            emailNotifier.sendEmail("Nowa cena akcji: " + price);
+            smsNotifier.sendSMS("Nowa cena akcji: " + price);
+            dashboard.updateDisplay("Cena: " + price);
+        }
+
+    }
+
+    static class EmailNotifierBefore {
+
+        public void sendEmail(String message) {
+            System.out.println("Email: " + message);
+        }
+
+    }
+
+    static class SMSNotifierBefore {
+
+        public void sendSMS(String message) {
+            System.out.println("SMS: " + message);
+        }
+
+    }
+
+    static class DashboardBefore {
+
+        public void updateDisplay(String message) {
+            System.out.println("Dashboard: " + message);
+        }
+
+    }
+
+    /*private static void demonstrateObserverPattern() {
+        System.out.println("\n=== OBSERVER PATTERN ===");
+        var market = new StockMarketAfter();
+
+        // Dynamiczne dodawanie obserwatorów
+        var emailObserver = new EmailNotifierObserver("investor@example.com");
+        var smsObserver = new SMSNotifierObserver("+48123456789");
+        var dashboardObserver = new DashboardObserver();
+
+        market.attach(emailObserver);
+        market.attach(smsObserver);
+        market.attach(dashboardObserver);
+
+        // Symulacja zmian cen akcji
+        market.setStockPrice("AAPL", 150.00);
+        market.setStockPrice("AAPL", 158.00);
+        market.setStockPrice("AAPL", 175.00);
+
+        // Można dynamicznie usunąć obserwatora
+        market.detach(smsObserver);
+        market.setStockPrice("AAPL", 170.00);
+    }*/
 
 }
