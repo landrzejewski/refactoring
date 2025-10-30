@@ -9,7 +9,8 @@ public class GofRefactoringExamples {
         // demonstrateSingletonPattern();
         // demonstrateFactoryMethodPattern();
         // demonstrateStrategyPattern();
-        demonstrateObserverPattern();
+        // demonstrateObserverPattern();
+        demonstrateDecoratorPattern();
     }
 
     // ========================================
@@ -725,7 +726,130 @@ public class GofRefactoringExamples {
     // PROBLEM: Potrzeba dziesiątek klas dla wszystkich kombinacji!
     // CoffeeWithMilkSugarAndCaramel, CoffeeWithMilkAndWhippedCream, etc.
 
-    /*private static void demonstrateDecoratorPattern() {
+    /**
+     * PO: Decorator Pattern
+     * Zalety:
+     * - Dynamiczne dodawanie funkcjonalności w runtime
+     * - Nie potrzeba eksplozji klas
+     * - Zgodność z Open/Closed Principle
+     * - Elastyczne komponowanie zachowań
+     */
+    interface Coffee {
+
+        String getDescription();
+
+        double getCost();
+
+    }
+
+    static class BasicCoffee implements Coffee {
+
+        @Override
+        public String getDescription() {
+            return "Podstawowa kawa";
+        }
+
+        @Override
+        public double getCost() {
+            return 5.0;
+        }
+
+    }
+
+    // Abstrakcyjna klasa dekoratora
+    static abstract class CoffeeDecorator implements Coffee {
+
+        protected final Coffee decoratedCoffee;
+
+        public CoffeeDecorator(Coffee coffee) {
+            this.decoratedCoffee = coffee;
+        }
+
+        @Override
+        public String getDescription() {
+            return decoratedCoffee.getDescription();
+        }
+
+        @Override
+        public double getCost() {
+            return decoratedCoffee.getCost();
+        }
+
+    }
+
+    static class MilkDecorator extends CoffeeDecorator {
+
+        public MilkDecorator(Coffee coffee) {
+            super(coffee);
+        }
+
+        @Override
+        public String getDescription() {
+            return decoratedCoffee.getDescription() + ", mleko";
+        }
+
+        @Override
+        public double getCost() {
+            return decoratedCoffee.getCost() + 1.0;
+        }
+
+    }
+
+    static class SugarDecorator extends CoffeeDecorator {
+
+        public SugarDecorator(Coffee coffee) {
+            super(coffee);
+        }
+
+        @Override
+        public String getDescription() {
+            return decoratedCoffee.getDescription() + ", cukier";
+        }
+
+        @Override
+        public double getCost() {
+            return decoratedCoffee.getCost() + 0.5;
+        }
+
+    }
+
+    static class CaramelDecorator extends CoffeeDecorator {
+
+        public CaramelDecorator(Coffee coffee) {
+            super(coffee);
+        }
+
+        @Override
+        public String getDescription() {
+            return decoratedCoffee.getDescription() + ", karmel";
+        }
+
+        @Override
+        public double getCost() {
+            return decoratedCoffee.getCost() + 1.5;
+        }
+
+    }
+
+    static class WhippedCreamDecorator extends CoffeeDecorator {
+
+        public WhippedCreamDecorator(Coffee coffee) {
+            super(coffee);
+        }
+
+        @Override
+        public String getDescription() {
+            return decoratedCoffee.getDescription() + ", bita śmietana";
+        }
+
+        @Override
+        public double getCost() {
+            return decoratedCoffee.getCost() + 2.0;
+        }
+
+    }
+
+    private static void demonstrateDecoratorPattern() {
         System.out.println("\n=== DECORATOR PATTERN ===");
 
         // Podstawowa kawa
@@ -750,6 +874,95 @@ public class GofRefactoringExamples {
                                 new MilkDecorator(
                                         new BasicCoffee()))));
         System.out.println(coffee4.getDescription() + " - Koszt: " + coffee4.getCost() + " PLN");
+    }
+
+    // ========================================
+    // 6. BUILDER PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Konstruktor z wieloma parametrami (Telescoping Constructor Anti-pattern)
+     * Problemy:
+     * - Niezrozumiały kod przy wywołaniu (co oznacza każdy parametr?)
+     * - Trudność w dodawaniu nowych parametrów
+     * - Niemożność pominięcia niektórych opcjonalnych parametrów
+     * - Brak walidacji
+     */
+    static class HttpRequestBefore {
+
+        private String url;
+        private String method;
+        private Map<String, String> headers;
+        private String body;
+        private int timeout;
+        private boolean followRedirects;
+        private String userAgent;
+
+        // PROBLEM: Telescoping constructor
+        public HttpRequestBefore(String url) {
+            this(url, "GET", new HashMap<>(), null, 30000, true, "Mozilla/5.0");
+        }
+
+        public HttpRequestBefore(String url, String method) {
+            this(url, method, new HashMap<>(), null, 30000, true, "Mozilla/5.0");
+        }
+
+        public HttpRequestBefore(String url, String method, Map<String, String> headers) {
+            this(url, method, headers, null, 30000, true, "Mozilla/5.0");
+        }
+
+        public HttpRequestBefore(String url, String method, Map<String, String> headers,
+                                 String body, int timeout, boolean followRedirects, String userAgent) {
+            // PROBLEM: Co oznacza każdy parametr? Łatwo pomylić kolejność!
+            this.url = url;
+            this.method = method;
+            this.headers = headers;
+            this.body = body;
+            this.timeout = timeout;
+            this.followRedirects = followRedirects;
+            this.userAgent = userAgent;
+        }
+
+        public void execute() {
+            System.out.println("Wykonuję request (before): " + method + " " + url);
+        }
+
+    }
+
+/*    private static void demonstrateBuilderPattern() {
+        System.out.println("\n=== BUILDER PATTERN ===");
+
+        // Prosty request z minimalnymi parametrami
+        var request1 = new HttpRequest.Builder("https://api.example.com/users")
+                .build();
+        request1.execute();
+
+        System.out.println();
+
+        // Złożony request z wieloma parametrami - czytelny kod!
+        var request2 = new HttpRequest.Builder("https://api.example.com/data")
+                .method("POST")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer token123")
+                .body("{\"name\": \"Jan Kowalski\", \"age\": 30}")
+                .timeout(60000)
+                .followRedirects(false)
+                .userAgent("MyApp/1.0")
+                .retryCount(5)
+                .build();
+        request2.execute();
+
+        System.out.println();
+
+        // Próba utworzenia nieprawidłowego obiektu - walidacja
+        try {
+            var invalidRequest = new HttpRequest.Builder("https://api.example.com/update")
+                    .method("POST")
+                    // Brak body!
+                    .build();
+        } catch (IllegalStateException e) {
+            System.out.println("❌ Błąd walidacji: " + e.getMessage());
+        }
     }*/
 
 }
