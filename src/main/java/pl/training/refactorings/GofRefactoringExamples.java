@@ -1,16 +1,15 @@
 package pl.training.refactorings;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GofRefactoringExamples {
 
     public static void main(String[] args) {
         // demonstrateSingletonPattern();
         // demonstrateFactoryMethodPattern();
-        demonstrateStrategyPattern();
+        // demonstrateStrategyPattern();
+        demonstrateObserverPattern();
     }
 
     // ========================================
@@ -550,11 +549,118 @@ public class GofRefactoringExamples {
 
     }
 
-    /*private static void demonstrateObserverPattern() {
+    /**
+     * PO: Observer Pattern
+     * Zalety:
+     * - Luźne powiązanie między Subject a Observer
+     * - Łatwe dodawanie/usuwanie obserwatorów dynamicznie
+     * - Zgodność z Open/Closed Principle
+     * - Możliwość wielu obserwatorów nasłuchujących ten sam podmiot
+     */
+    interface StockObserver {
+
+        void update(String stockSymbol, double price, double changePercent);
+
+    }
+
+    interface StockSubject {
+
+        void attach(StockObserver observer);
+
+        void detach(StockObserver observer);
+
+        void notifyObservers();
+
+    }
+
+    static class StockMarketAfter implements StockSubject {
+
+        private final List<StockObserver> observers = new ArrayList<>();
+        private final Map<String, Double> stockPrices = new ConcurrentHashMap<>();
+        private final Map<String, Double> previousPrices = new ConcurrentHashMap<>();
+
+        @Override
+        public void attach(StockObserver observer) {
+            observers.add(observer);
+            System.out.println("Dodano obserwatora: " + observer.getClass().getSimpleName());
+        }
+
+        @Override
+        public void detach(StockObserver observer) {
+            observers.remove(observer);
+            System.out.println("Usunięto obserwatora: " + observer.getClass().getSimpleName());
+        }
+
+        @Override
+        public void notifyObservers() {
+            for (StockObserver observer : observers) {
+                stockPrices.forEach((symbol, price) -> {
+                    double previousPrice = previousPrices.getOrDefault(symbol, price);
+                    double changePercent = ((price - previousPrice) / previousPrice) * 100;
+                    observer.update(symbol, price, changePercent);
+                });
+            }
+        }
+
+        public void setStockPrice(String symbol, double price) {
+            previousPrices.put(symbol, stockPrices.getOrDefault(symbol, price));
+            stockPrices.put(symbol, price);
+            notifyObservers();
+        }
+
+    }
+
+    static class EmailNotifierObserver implements StockObserver {
+
+        private final String emailAddress;
+
+        public EmailNotifierObserver(String emailAddress) {
+            this.emailAddress = emailAddress;
+        }
+
+        @Override
+        public void update(String stockSymbol, double price, double changePercent) {
+            if (Math.abs(changePercent) > 5) {
+                System.out.printf("📧 Email do %s: Uwaga! Akcje %s zmieniły się o %.2f%% (cena: %.2f)%n",
+                        emailAddress, stockSymbol, changePercent, price);
+            }
+        }
+
+    }
+
+    static class SMSNotifierObserver implements StockObserver {
+
+        private final String phoneNumber;
+
+        public SMSNotifierObserver(String phoneNumber) {
+            this.phoneNumber = phoneNumber;
+        }
+
+        @Override
+        public void update(String stockSymbol, double price, double changePercent) {
+            if (Math.abs(changePercent) > 10) {
+                System.out.printf("📱 SMS na %s: Alarm! %s zmiana %.2f%% (%.2f)%n",
+                        phoneNumber, stockSymbol, changePercent, price);
+            }
+        }
+
+    }
+
+    static class DashboardObserver implements StockObserver {
+
+        @Override
+        public void update(String stockSymbol, double price, double changePercent) {
+            String trend = changePercent > 0 ? "📈" : "📉";
+            System.out.printf("🖥️  Dashboard: %s %s %.2f (zmiana: %.2f%%)%n",
+                    trend, stockSymbol, price, changePercent);
+        }
+
+    }
+
+    private static void demonstrateObserverPattern() {
         System.out.println("\n=== OBSERVER PATTERN ===");
         var market = new StockMarketAfter();
 
-        // Dynamiczne dodawanie obserwatorów
         var emailObserver = new EmailNotifierObserver("investor@example.com");
         var smsObserver = new SMSNotifierObserver("+48123456789");
         var dashboardObserver = new DashboardObserver();
@@ -563,14 +669,87 @@ public class GofRefactoringExamples {
         market.attach(smsObserver);
         market.attach(dashboardObserver);
 
-        // Symulacja zmian cen akcji
         market.setStockPrice("AAPL", 150.00);
-        market.setStockPrice("AAPL", 158.00);
-        market.setStockPrice("AAPL", 175.00);
 
-        // Można dynamicznie usunąć obserwatora
         market.detach(smsObserver);
         market.setStockPrice("AAPL", 170.00);
+    }
+
+    // ========================================
+    // 5. DECORATOR PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Eksplozja klas dla wszystkich kombinacji funkcjonalności
+     * Problemy:
+     * - Potrzeba osobnej klasy dla każdej kombinacji
+     * - Trudność w dodawaniu nowych funkcjonalności
+     * - Naruszenie Open/Closed Principle
+     */
+    static class BasicCoffeeBefore {
+
+        public String getDescription() {
+            return "Podstawowa kawa";
+        }
+
+        public double getCost() {
+            return 5.0;
+        }
+
+    }
+
+    static class CoffeeWithMilkBefore {
+
+        public String getDescription() {
+            return "Kawa z mlekiem";
+        }
+
+        public double getCost() {
+            return 6.0;
+        }
+
+    }
+
+    static class CoffeeWithMilkAndSugarBefore {
+
+        public String getDescription() {
+            return "Kawa z mlekiem i cukrem";
+        }
+
+        public double getCost() {
+            return 6.5;
+        }
+
+    }
+
+    // PROBLEM: Potrzeba dziesiątek klas dla wszystkich kombinacji!
+    // CoffeeWithMilkSugarAndCaramel, CoffeeWithMilkAndWhippedCream, etc.
+
+    /*private static void demonstrateDecoratorPattern() {
+        System.out.println("\n=== DECORATOR PATTERN ===");
+
+        // Podstawowa kawa
+        var coffee1 = new BasicCoffee();
+        System.out.println(coffee1.getDescription() + " - Koszt: " + coffee1.getCost() + " PLN");
+
+        // Kawa z mlekiem
+        var coffee2 = new MilkDecorator(new BasicCoffee());
+        System.out.println(coffee2.getDescription() + " - Koszt: " + coffee2.getCost() + " PLN");
+
+        // Kawa z mlekiem, cukrem i karmelem
+        var coffee3 = new CaramelDecorator(
+                new SugarDecorator(
+                        new MilkDecorator(
+                                new BasicCoffee())));
+        System.out.println(coffee3.getDescription() + " - Koszt: " + coffee3.getCost() + " PLN");
+
+        // Deluxe kawa z wszystkimi dodatkami
+        var coffee4 = new WhippedCreamDecorator(
+                new CaramelDecorator(
+                        new SugarDecorator(
+                                new MilkDecorator(
+                                        new BasicCoffee()))));
+        System.out.println(coffee4.getDescription() + " - Koszt: " + coffee4.getCost() + " PLN");
     }*/
 
 }
