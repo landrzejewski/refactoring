@@ -10,7 +10,8 @@ public class GofRefactoringExamples {
         // demonstrateFactoryMethodPattern();
         // demonstrateStrategyPattern();
         // demonstrateObserverPattern();
-        demonstrateDecoratorPattern();
+        // demonstrateDecoratorPattern();
+        demonstrateBuilderPattern();
     }
 
     // ========================================
@@ -929,7 +930,139 @@ public class GofRefactoringExamples {
 
     }
 
-/*    private static void demonstrateBuilderPattern() {
+    /**
+     * PO: Builder Pattern z fluent interface
+     * Zalety:
+     * - Czytelny, samodokumentujący się kod
+     * - Łatwe dodawanie nowych parametrów
+     * - Możliwość walidacji przed stworzeniem obiektu
+     * - Niemutowalność utworzonego obiektu
+     * - Elastyczność w ustawianiu tylko potrzebnych parametrów
+     */
+    static class HttpRequest {
+
+        // Wszystkie pola final - niemutowalność
+        private final String url;
+        private final String method;
+        private final Map<String, String> headers;
+        private final String body;
+        private final int timeout;
+        private final boolean followRedirects;
+        private final String userAgent;
+        private final int retryCount;
+
+        // Prywatny konstruktor - obiekt można utworzyć tylko przez Builder
+        private HttpRequest(Builder builder) {
+            this.url = builder.url;
+            this.method = builder.method;
+            this.headers = Collections.unmodifiableMap(new HashMap<>(builder.headers));
+            this.body = builder.body;
+            this.timeout = builder.timeout;
+            this.followRedirects = builder.followRedirects;
+            this.userAgent = builder.userAgent;
+            this.retryCount = builder.retryCount;
+        }
+
+        public void execute() {
+            System.out.printf("Wykonuję %s request do %s%n", method, url);
+            System.out.println("  Headers: " + headers);
+            System.out.println("  Timeout: " + timeout + "ms");
+            System.out.println("  Retry count: " + retryCount);
+            if (body != null) {
+                System.out.println("  Body: " + body);
+            }
+        }
+
+        // Gettery (bez setterów - immutability)
+        public String getUrl() { return url; }
+        public String getMethod() { return method; }
+        public Map<String, String> getHeaders() { return headers; }
+
+        // Builder jako wewnętrzna klasa statyczna
+        public static class Builder {
+            // Wymagane parametry
+            private final String url;
+
+            // Opcjonalne parametry z wartościami domyślnymi
+            private String method = "GET";
+            private Map<String, String> headers = new HashMap<>();
+            private String body = null;
+            private int timeout = 30000;
+            private boolean followRedirects = true;
+            private String userAgent = "Mozilla/5.0";
+            private int retryCount = 3;
+
+            // Konstruktor z wymaganymi parametrami
+            public Builder(String url) {
+                if (url == null || url.trim().isEmpty()) {
+                    throw new IllegalArgumentException("URL nie może być pusty");
+                }
+                this.url = url;
+            }
+
+            // Fluent interface - każda metoda zwraca Builder
+            public Builder method(String method) {
+                this.method = method;
+                return this;
+            }
+
+            public Builder addHeader(String key, String value) {
+                this.headers.put(key, value);
+                return this;
+            }
+
+            public Builder headers(Map<String, String> headers) {
+                this.headers = new HashMap<>(headers);
+                return this;
+            }
+
+            public Builder body(String body) {
+                this.body = body;
+                return this;
+            }
+
+            public Builder timeout(int timeout) {
+                if (timeout <= 0) {
+                    throw new IllegalArgumentException("Timeout musi być większy od 0");
+                }
+                this.timeout = timeout;
+                return this;
+            }
+
+            public Builder followRedirects(boolean followRedirects) {
+                this.followRedirects = followRedirects;
+                return this;
+            }
+
+            public Builder userAgent(String userAgent) {
+                this.userAgent = userAgent;
+                return this;
+            }
+
+            public Builder retryCount(int retryCount) {
+                if (retryCount < 0) {
+                    throw new IllegalArgumentException("Retry count nie może być ujemny");
+                }
+                this.retryCount = retryCount;
+                return this;
+            }
+
+            // Walidacja i budowanie obiektu
+            public HttpRequest build() {
+                // Dodatkowa walidacja przed utworzeniem obiektu
+                if ("POST".equals(method) || "PUT".equals(method)) {
+                    if (body == null) {
+                        throw new IllegalStateException(
+                                "Metoda " + method + " wymaga body");
+                    }
+                }
+
+                return new HttpRequest(this);
+            }
+        }
+    }
+
+    private static void demonstrateBuilderPattern() {
         System.out.println("\n=== BUILDER PATTERN ===");
 
         // Prosty request z minimalnymi parametrami
@@ -963,6 +1096,94 @@ public class GofRefactoringExamples {
         } catch (IllegalStateException e) {
             System.out.println("❌ Błąd walidacji: " + e.getMessage());
         }
+    }
+
+    // ========================================
+    // 7. ADAPTER PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Niekompatybilne interfejsy - nie można używać starych klas z nowym kodem
+     * Problemy:
+     * - Legacy kod ma inny interfejs niż nowy system
+     * - Niemożność modyfikacji starego kodu (biblioteka zewnętrzna)
+     * - Konieczność przepisywania całego starego kodu
+     */
+
+    // Stary system płatności (legacy)
+    static class OldPaymentGateway {
+
+        public void makePayment(String accountNumber, double amount) {
+            System.out.println("LEGACY: Wykonuję płatność " + amount + " PLN z konta: " + accountNumber);
+        }
+
+        public String getTransactionStatus(String transactionId) {
+            return "COMPLETED";
+        }
+
+    }
+
+    // Nowy interfejs systemu płatności
+    interface ModernPaymentProcessor {
+
+        PaymentResult processPayment(PaymentRequest request);
+        boolean verifyPayment(String paymentId);
+
+    }
+
+    static class PaymentRequest {
+
+        private final String customerId;
+        private final double amount;
+        private final String currency;
+        private final String description;
+
+        public PaymentRequest(String customerId, double amount, String currency, String description) {
+            this.customerId = customerId;
+            this.amount = amount;
+            this.currency = currency;
+            this.description = description;
+        }
+
+        public String getCustomerId() { return customerId; }
+        public double getAmount() { return amount; }
+        public String getCurrency() { return currency; }
+        public String getDescription() { return description; }
+
+    }
+
+    static class PaymentResult {
+
+        private final boolean success;
+        private final String transactionId;
+        private final String message;
+
+        public PaymentResult(boolean success, String transactionId, String message) {
+            this.success = success;
+            this.transactionId = transactionId;
+            this.message = message;
+        }
+
+        public boolean isSuccess() { return success; }
+        public String getTransactionId() { return transactionId; }
+        public String getMessage() { return message; }
+
+    }
+
+    /*private static void demonstrateAdapterPattern() {
+        System.out.println("\n=== ADAPTER PATTERN ===");
+
+        // Używamy starego systemu przez adapter
+        System.out.println("--- Używam legacy systemu przez adapter ---");
+        var oldGateway = new OldPaymentGateway();
+        var adaptedProcessor = new PaymentGatewayAdapter(oldGateway);
+        var service1 = new PaymentService(adaptedProcessor);
+        service1.executePayment("CUST-123", 299.99, "PLN", "Zakup laptopa");
+
+        System.out.println("\n--- Używam nowoczesnego systemu Stripe ---");
+        var stripeProcessor = new StripePaymentProcessor();
+        var service2 = new PaymentService(stripeProcessor);
+        service2.executePayment("CUST-456", 149.99, "PLN", "Subskrypcja roczna");
     }*/
 
 }
