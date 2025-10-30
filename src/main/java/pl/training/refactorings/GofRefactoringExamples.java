@@ -12,9 +12,10 @@ public class GofRefactoringExamples {
         // demonstrateObserverPattern();
         // demonstrateDecoratorPattern();
         // demonstrateBuilderPattern();
-        demonstrateAdapterPattern();
+        // demonstrateAdapterPattern();
         // demonstrateFacadePattern();
         // demonstrateTemplateMethodPattern();
+        demonstrateTemplateMethodPattern();
     }
 
     // ========================================
@@ -1550,7 +1551,192 @@ public class GofRefactoringExamples {
         }
     }
 
-    /*private static void demonstrateTemplateMethodPattern() {
+    /**
+     * PO: Template Method Pattern
+     * Zalety:
+     * - Wspólny szkielet algorytmu w klasie bazowej
+     * - Podklasy definiują tylko różniące się kroki
+     * - Eliminacja duplikacji kodu
+     * - Łatwa modyfikacja wspólnej logiki
+     * - Zgodność z Hollywood Principle ("Don't call us, we'll call you")
+     */
+    static abstract class ReportGenerator {
+
+        // Template Method - definiuje szkielet algorytmu
+        public final void generateReport(String data) {
+            openDatabaseConnection();
+            fetchData(data);
+            formatData();
+            addHeader();
+            generateContent();
+            addFooter();
+            saveReport();
+            closeDatabaseConnection();
+
+            // Hook method - opcjonalna operacja
+            if (shouldSendEmail()) {
+                sendEmailNotification();
+            }
+        }
+
+        // Wspólne kroki - implementowane w klasie bazowej
+        private void openDatabaseConnection() {
+            System.out.println("  [DB] Otwieranie połączenia z bazą danych...");
+        }
+
+        private void fetchData(String data) {
+            System.out.println("  [DB] Pobieranie danych: " + data);
+        }
+
+        private void closeDatabaseConnection() {
+            System.out.println("  [DB] Zamykanie połączenia\n");
+        }
+
+        // Abstrakcyjne metody - podklasy MUSZĄ je zaimplementować
+        protected abstract void formatData();
+
+        protected abstract void addHeader();
+
+        protected abstract void generateContent();
+
+        protected abstract void addFooter();
+
+        protected abstract void saveReport();
+
+        protected abstract String getReportType();
+
+        // Hook method - podklasy MOGĄ je nadpisać (domyślnie false)
+        protected boolean shouldSendEmail() {
+            return false;
+        }
+
+        protected void sendEmailNotification() {
+            System.out.println("  [Email] Wysyłanie powiadomienia email...");
+        }
+
+    }
+
+    static class PDFReportGenerator extends ReportGenerator {
+
+        @Override
+        protected void formatData() {
+            System.out.println("  [PDF] Formatowanie danych do PDF");
+        }
+
+        @Override
+        protected void addHeader() {
+            System.out.println("  [PDF] Dodawanie nagłówka z logo firmy");
+        }
+
+        @Override
+        protected void generateContent() {
+            System.out.println("  [PDF] Generowanie treści w formacie PDF");
+            System.out.println("  [PDF] Dodawanie grafik i tabel");
+        }
+
+        @Override
+        protected void addFooter() {
+            System.out.println("  [PDF] Dodawanie stopki z numeracją stron");
+        }
+
+        @Override
+        protected void saveReport() {
+            System.out.println("  [PDF] Zapisywanie pliku: report.pdf");
+        }
+
+        @Override
+        protected String getReportType() {
+            return "PDF";
+        }
+
+        @Override
+        protected boolean shouldSendEmail() {
+            return true; // PDF zawsze wysyła email
+        }
+
+    }
+
+    static class ExcelReportGenerator extends ReportGenerator {
+
+        @Override
+        protected void formatData() {
+            System.out.println("  [Excel] Formatowanie danych do arkusza kalkulacyjnego");
+        }
+
+        @Override
+        protected void addHeader() {
+            System.out.println("  [Excel] Tworzenie nagłówków kolumn");
+        }
+
+        @Override
+        protected void generateContent() {
+            System.out.println("  [Excel] Generowanie arkuszy z danymi");
+            System.out.println("  [Excel] Dodawanie formuł i wykresów");
+        }
+
+        @Override
+        protected void addFooter() {
+            System.out.println("  [Excel] Dodawanie podsumowania i sum");
+        }
+
+        @Override
+        protected void saveReport() {
+            System.out.println("  [Excel] Zapisywanie pliku: report.xlsx");
+        }
+
+        @Override
+        protected String getReportType() {
+            return "Excel";
+        }
+
+    }
+
+    static class HTMLReportGenerator extends ReportGenerator {
+
+        private final boolean sendNotification;
+
+        public HTMLReportGenerator(boolean sendNotification) {
+            this.sendNotification = sendNotification;
+        }
+
+        @Override
+        protected void formatData() {
+            System.out.println("  [HTML] Formatowanie danych do HTML");
+        }
+
+        @Override
+        protected void addHeader() {
+            System.out.println("  [HTML] Dodawanie nagłówka HTML z CSS");
+        }
+
+        @Override
+        protected void generateContent() {
+            System.out.println("  [HTML] Generowanie treści z interaktywnymi elementami");
+        }
+
+        @Override
+        protected void addFooter() {
+            System.out.println("  [HTML] Dodawanie stopki z linkami");
+        }
+
+        @Override
+        protected void saveReport() {
+            System.out.println("  [HTML] Zapisywanie pliku: report.html");
+        }
+
+        @Override
+        protected String getReportType() {
+            return "HTML";
+        }
+
+        @Override
+        protected boolean shouldSendEmail() {
+            return sendNotification;
+        }
+
+    }
+
+    private static void demonstrateTemplateMethodPattern() {
         System.out.println("\n=== TEMPLATE METHOD PATTERN ===");
 
         System.out.println("--- Generowanie raportu PDF ---");
@@ -1564,6 +1750,77 @@ public class GofRefactoringExamples {
         System.out.println("--- Generowanie raportu HTML z powiadomieniem ---");
         var htmlGenerator = new HTMLReportGenerator(true);
         htmlGenerator.generateReport("Raport online");
-    }*/
+    }
+
+    // ========================================
+    // 10. COMMAND PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Bezpośrednie wywołania operacji, brak historii, niemożność cofnięcia
+     * Problemy:
+     * - Brak możliwości cofnięcia operacji (undo)
+     * - Niemożność kolejkowania operacji
+     * - Brak historii wykonanych działań
+     * - Silne sprzężenie między nadawcą a odbiorcą
+     */
+    static class TextEditorBefore {
+
+        private StringBuilder content = new StringBuilder();
+
+        public void write(String text) {
+            // PROBLEM: Bezpośrednia operacja, nie można jej cofnąć
+            content.append(text);
+            System.out.println("Napisano: " + text);
+        }
+
+        public void delete(int length) {
+            // PROBLEM: Nie ma możliwości przywrócenia usuniętego tekstu
+            int start = Math.max(0, content.length() - length);
+            content.delete(start, content.length());
+            System.out.println("Usunięto " + length + " znaków");
+        }
+
+        public String getContent() {
+            return content.toString();
+        }
+
+    }
+
+    /*private static void demonstrateCommandPattern() {
+        System.out.println("\n=== COMMAND PATTERN ===");
+
+        var editor = new TextEditorWithHistory();
+
+        // Wykonywanie komend
+        editor.executeCommand(new WriteCommand(editor.getDocument(), "Witaj "));
+        editor.executeCommand(new WriteCommand(editor.getDocument(), "świecie!"));
+        System.out.println("Treść: \"" + editor.getContent() + "\"\n");
+
+        editor.executeCommand(new DeleteCommand(editor.getDocument(), 8));
+        System.out.println("Treść: \"" + editor.getContent() + "\"\n");
+
+        editor.executeCommand(new WriteCommand(editor.getDocument(), " Polsko!"));
+        System.out.println("Treść: \"" + editor.getContent() + "\"\n");
+
+        // Cofanie operacji
+        System.out.println("--- Cofanie operacji ---");
+        editor.undo();
+        System.out.println("Treść: \"" + editor.getContent() + "\"\n");
+
+        editor.undo();
+        System.out.println("Treść: \"" + editor.getContent() + "\"\n");
+
+        // Ponowne wykonanie
+        System.out.println("--- Ponowne wykonanie ---");
+        editor.redo();
+        System.out.println("Treść: \"" + editor.getContent() + "\"\n");
+
+        // Zamiana tekstu
+        editor.executeCommand(new ReplaceCommand(editor.getDocument(), "Witaj", "Cześć"));
+        System.out.println("Treść: \"" + editor.getContent() + "\"\n");
+
+        editor.showHistory();*/
+    }
 
 }
