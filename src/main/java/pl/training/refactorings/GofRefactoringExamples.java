@@ -6,16 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GofRefactoringExamples {
 
     public static void main(String[] args) {
-        // demonstrateSingletonPattern();
-        // demonstrateFactoryMethodPattern();
-        // demonstrateStrategyPattern();
-        // demonstrateObserverPattern();
-        // demonstrateDecoratorPattern();
-        // demonstrateBuilderPattern();
-        // demonstrateAdapterPattern();
-        // demonstrateFacadePattern();
-        // demonstrateTemplateMethodPattern();
-        demonstrateTemplateMethodPattern();
+        demonstrateCommandPattern();
     }
 
     // ========================================
@@ -1787,7 +1778,222 @@ public class GofRefactoringExamples {
 
     }
 
-    /*private static void demonstrateCommandPattern() {
+    /**
+     * PO: Command Pattern z obsługą Undo/Redo
+     * Zalety:
+     * - Możliwość cofania operacji (undo)
+     * - Możliwość ponowienia operacji (redo)
+     * - Historia wszystkich operacji
+     * - Kolejkowanie i logowanie komend
+     * - Luźne sprzężenie między nadawcą a odbiorcą
+     */
+
+    // Receiver - obiekt wykonujący rzeczywiste operacje
+    static class TextDocument {
+
+        private StringBuilder content = new StringBuilder();
+
+        public void insertText(int position, String text) {
+            content.insert(position, text);
+        }
+
+        public String deleteText(int position, int length) {
+            var deleted = content.substring(position, Math.min(position + length, content.length()));
+            content.delete(position, Math.min(position + length, content.length()));
+            return deleted;
+        }
+
+        public String getContent() {
+            return content.toString();
+        }
+
+        public int getLength() {
+            return content.length();
+        }
+
+    }
+
+    // Command interface
+    interface Command {
+
+        void execute();
+
+        void undo();
+
+        String getDescription();
+
+    }
+
+    // Concrete Commands
+    static class WriteCommand implements Command {
+
+        private final TextDocument document;
+        private final String text;
+        private final int position;
+
+        public WriteCommand(TextDocument document, String text) {
+            this.document = document;
+            this.text = text;
+            this.position = document.getLength();
+        }
+
+        @Override
+        public void execute() {
+            document.insertText(position, text);
+            System.out.println("✍️  Napisano: \"" + text + "\"");
+        }
+
+        @Override
+        public void undo() {
+            document.deleteText(position, text.length());
+            System.out.println("↩️  Cofnięto pisanie: \"" + text + "\"");
+        }
+
+        @Override
+        public String getDescription() {
+            return "Napisanie: \"" + text + "\"";
+        }
+
+    }
+
+    static class DeleteCommand implements Command {
+
+        private final TextDocument document;
+        private final int length;
+        private String deletedText;
+        private int position;
+
+        public DeleteCommand(TextDocument document, int length) {
+            this.document = document;
+            this.length = length;
+        }
+
+        @Override
+        public void execute() {
+            position = Math.max(0, document.getLength() - length);
+            deletedText = document.deleteText(position, length);
+            System.out.println("🗑️  Usunięto: \"" + deletedText + "\"");
+        }
+
+        @Override
+        public void undo() {
+            document.insertText(position, deletedText);
+            System.out.println("↩️  Cofnięto usunięcie: \"" + deletedText + "\"");
+        }
+
+        @Override
+        public String getDescription() {
+            return "Usunięcie " + length + " znaków";
+        }
+
+    }
+
+    static class ReplaceCommand implements Command {
+
+        private final TextDocument document;
+        private final String oldText;
+        private final String newText;
+        private boolean executed = false;
+
+        public ReplaceCommand(TextDocument document, String oldText, String newText) {
+            this.document = document;
+            this.oldText = oldText;
+            this.newText = newText;
+        }
+
+        @Override
+        public void execute() {
+            String content = document.getContent();
+            int index = content.indexOf(oldText);
+            if (index != -1) {
+                document.deleteText(index, oldText.length());
+                document.insertText(index, newText);
+                executed = true;
+                System.out.println("🔄 Zastąpiono: \"" + oldText + "\" → \"" + newText + "\"");
+            } else {
+                System.out.println("⚠️  Nie znaleziono tekstu: \"" + oldText + "\"");
+            }
+        }
+
+        @Override
+        public void undo() {
+            if (executed) {
+                String content = document.getContent();
+                int index = content.indexOf(newText);
+                if (index != -1) {
+                    document.deleteText(index, newText.length());
+                    document.insertText(index, oldText);
+                    System.out.println("↩️  Cofnięto zamianę: \"" + newText + "\" → \"" + oldText + "\"");
+                }
+            }
+        }
+
+        @Override
+        public String getDescription() {
+            return "Zamiana: \"" + oldText + "\" na \"" + newText + "\"";
+        }
+
+    }
+
+    // Invoker - zarządza wykonaniem komend i historią
+    static class TextEditorWithHistory {
+
+        private final TextDocument document;
+        private final Stack<Command> history = new Stack<>();
+        private final Stack<Command> redoStack = new Stack<>();
+
+        public TextEditorWithHistory() {
+            this.document = new TextDocument();
+        }
+
+        public void executeCommand(Command command) {
+            command.execute();
+            history.push(command);
+            redoStack.clear(); // Po nowej operacji czyścimy redo
+        }
+
+        public void undo() {
+            if (history.isEmpty()) {
+                System.out.println("⚠️  Brak operacji do cofnięcia");
+                return;
+            }
+            Command command = history.pop();
+            command.undo();
+            redoStack.push(command);
+        }
+
+        public void redo() {
+            if (redoStack.isEmpty()) {
+                System.out.println("⚠️  Brak operacji do ponowienia");
+                return;
+            }
+            Command command = redoStack.pop();
+            command.execute();
+            history.push(command);
+        }
+
+        public void showHistory() {
+            System.out.println("\n📋 Historia operacji:");
+            if (history.isEmpty()) {
+                System.out.println("  (pusta)");
+            } else {
+                for (int i = 0; i < history.size(); i++) {
+                    System.out.println("  " + (i + 1) + ". " + history.get(i).getDescription());
+                }
+            }
+        }
+
+        public String getContent() {
+            return document.getContent();
+        }
+
+        public TextDocument getDocument() {
+            return document;
+        }
+
+    }
+
+    private static void demonstrateCommandPattern() {
         System.out.println("\n=== COMMAND PATTERN ===");
 
         var editor = new TextEditorWithHistory();
@@ -1820,7 +2026,76 @@ public class GofRefactoringExamples {
         editor.executeCommand(new ReplaceCommand(editor.getDocument(), "Witaj", "Cześć"));
         System.out.println("Treść: \"" + editor.getContent() + "\"\n");
 
-        editor.showHistory();*/
+        editor.showHistory();
+    }
+
+    // ========================================
+    // 11. CHAIN OF RESPONSIBILITY PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Złożona logika if-else do obsługi różnych przypadków
+     * Problemy:
+     * - Długie łańcuchy if-else
+     * - Trudność w dodawaniu nowych przypadków
+     * - Naruszenie Single Responsibility Principle
+     * - Ścisłe sprzężenie
+     */
+    static class SupportTicketHandlerBefore {
+
+        public void handleTicket(String severity, String issue) {
+            // PROBLEM: Cała logika w jednej metodzie z wieloma if-else
+            if (severity.equals("LOW")) {
+                if (issue.contains("password")) {
+                    System.out.println("Bot: Resetuję hasło automatycznie");
+                } else {
+                    System.out.println("Level 1 Support: Obsługuję prosty problem");
+                }
+            } else if (severity.equals("MEDIUM")) {
+                if (issue.contains("bug")) {
+                    System.out.println("Level 2 Support: Analizuję i naprawiam bug");
+                } else {
+                    System.out.println("Level 2 Support: Rozwiązuję średnio złożony problem");
+                }
+            } else if (severity.equals("HIGH")) {
+                if (issue.contains("security")) {
+                    System.out.println("Security Team: Natychmiastowa reakcja na problem bezpieczeństwa!");
+                } else {
+                    System.out.println("Level 3 Support: Obsługuję krytyczny problem");
+                }
+            } else if (severity.equals("CRITICAL")) {
+                System.out.println("Management: Eskalacja do zarządu!");
+                System.out.println("CTO: Osobiste zajęcie się sprawą");
+            }
+        }
+
+        /*private static void demonstrateChainOfResponsibilityPattern() {
+            System.out.println("\n=== CHAIN OF RESPONSIBILITY PATTERN ===");
+
+            // Budowanie łańcucha odpowiedzialności
+            var chain = new AutomatedBotHandler();
+            chain.setNext(new Level1SupportHandler())
+                    .setNext(new Level2SupportHandler())
+                    .setNext(new SecurityTeamHandler())
+                    .setNext(new Level3SupportHandler())
+                    .setNext(new ManagementHandler());
+
+            // Testowanie różnych zgłoszeń
+            var tickets = Arrays.asList(
+                    new SupportTicket("001", "LOW", "Nie mogę się zalogować - zapomniałem hasła", "Jan Kowalski"),
+                    new SupportTicket("002", "MEDIUM", "Znalazłem bug w formularzu zamówienia", "Anna Nowak"),
+                    new SupportTicket("003", "HIGH", "System nie odpowiada - przestoje w produkcji", "Piotr Wiśniewski"),
+                    new SupportTicket("004", "LOW", "Jak zmienić email w profilu?", "Maria Lewandowska"),
+                    new SupportTicket("005", "CRITICAL", "Podejrzenie security breach - wyciek danych", "Adam Kowalczyk"),
+                    new SupportTicket("006", "MEDIUM", "Security audit wykazał lukę w autoryzacji", "Ewa Szymańska")
+            );
+
+            for (SupportTicket ticket : tickets) {
+                System.out.println("\n📩 Nowe zgłoszenie: " + ticket);
+                chain.handleTicket(ticket);
+            }
+        }*/
+
     }
 
 }
