@@ -11,7 +11,10 @@ public class GofRefactoringExamples {
         // demonstrateStrategyPattern();
         // demonstrateObserverPattern();
         // demonstrateDecoratorPattern();
-        demonstrateBuilderPattern();
+        // demonstrateBuilderPattern();
+        demonstrateAdapterPattern();
+        // demonstrateFacadePattern();
+        // demonstrateTemplateMethodPattern();
     }
 
     // ========================================
@@ -974,9 +977,17 @@ public class GofRefactoringExamples {
         }
 
         // Gettery (bez setterów - immutability)
-        public String getUrl() { return url; }
-        public String getMethod() { return method; }
-        public Map<String, String> getHeaders() { return headers; }
+        public String getUrl() {
+            return url;
+        }
+
+        public String getMethod() {
+            return method;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
 
         // Builder jako wewnętrzna klasa statyczna
         public static class Builder {
@@ -1127,6 +1138,7 @@ public class GofRefactoringExamples {
     interface ModernPaymentProcessor {
 
         PaymentResult processPayment(PaymentRequest request);
+
         boolean verifyPayment(String paymentId);
 
     }
@@ -1145,10 +1157,21 @@ public class GofRefactoringExamples {
             this.description = description;
         }
 
-        public String getCustomerId() { return customerId; }
-        public double getAmount() { return amount; }
-        public String getCurrency() { return currency; }
-        public String getDescription() { return description; }
+        public String getCustomerId() {
+            return customerId;
+        }
+
+        public double getAmount() {
+            return amount;
+        }
+
+        public String getCurrency() {
+            return currency;
+        }
+
+        public String getDescription() {
+            return description;
+        }
 
     }
 
@@ -1164,13 +1187,113 @@ public class GofRefactoringExamples {
             this.message = message;
         }
 
-        public boolean isSuccess() { return success; }
-        public String getTransactionId() { return transactionId; }
-        public String getMessage() { return message; }
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public String getTransactionId() {
+            return transactionId;
+        }
+
+        public String getMessage() {
+            return message;
+        }
 
     }
 
-    /*private static void demonstrateAdapterPattern() {
+    /**
+     * PO: Adapter Pattern - adaptuje stary interfejs do nowego
+     * Zalety:
+     * - Możliwość używania legacy kodu bez modyfikacji
+     * - Integracja niekompatybilnych interfejsów
+     * - Zgodność z Open/Closed Principle
+     * - Możliwość łatwej wymiany implementacji
+     */
+    static class PaymentGatewayAdapter implements ModernPaymentProcessor {
+
+        private final OldPaymentGateway oldGateway;
+        private int transactionCounter = 1000;
+
+        public PaymentGatewayAdapter(OldPaymentGateway oldGateway) {
+            this.oldGateway = oldGateway;
+        }
+
+        @Override
+        public PaymentResult processPayment(PaymentRequest request) {
+            try {
+                // Adaptacja: konwersja nowego interfejsu na stary
+                System.out.println("Adapter: Konwertuję PaymentRequest na stary format...");
+                String accountNumber = "ACC-" + request.getCustomerId();
+
+                // Wywołanie starego interfejsu
+                oldGateway.makePayment(accountNumber, request.getAmount());
+
+                // Konwersja wyniku ze starego na nowy format
+                String transactionId = "TXN-" + (transactionCounter++);
+                return new PaymentResult(true, transactionId,
+                        "Płatność " + request.getAmount() + " " + request.getCurrency() + " zakończona sukcesem");
+
+            } catch (Exception e) {
+                return new PaymentResult(false, null, "Błąd płatności: " + e.getMessage());
+            }
+        }
+
+        @Override
+        public boolean verifyPayment(String paymentId) {
+            System.out.println("Adapter: Weryfikuję płatność " + paymentId);
+            String status = oldGateway.getTransactionStatus(paymentId);
+            return "COMPLETED".equals(status);
+        }
+
+    }
+
+    // Nowa, nowoczesna implementacja
+    static class StripePaymentProcessor implements ModernPaymentProcessor {
+
+        @Override
+        public PaymentResult processPayment(PaymentRequest request) {
+            System.out.println("Stripe: Przetwarzam płatność przez nowoczesne API...");
+            System.out.println("  Klient: " + request.getCustomerId());
+            System.out.println("  Kwota: " + request.getAmount() + " " + request.getCurrency());
+            System.out.println("  Opis: " + request.getDescription());
+
+            return new PaymentResult(true, "STRIPE-" + UUID.randomUUID().toString().substring(0, 8),
+                    "Płatność przetworzona przez Stripe");
+        }
+
+        @Override
+        public boolean verifyPayment(String paymentId) {
+            System.out.println("Stripe: Weryfikuję płatność " + paymentId);
+            return true;
+        }
+
+    }
+
+    // Klient używający nowoczesnego interfejsu
+    static class PaymentService {
+
+        private final ModernPaymentProcessor processor;
+
+        public PaymentService(ModernPaymentProcessor processor) {
+            this.processor = processor;
+        }
+
+        public void executePayment(String customerId, double amount, String currency, String description) {
+            var request = new PaymentRequest(customerId, amount, currency, description);
+            var result = processor.processPayment(request);
+
+            if (result.isSuccess()) {
+                System.out.println("✅ " + result.getMessage());
+                System.out.println("   ID transakcji: " + result.getTransactionId());
+                processor.verifyPayment(result.getTransactionId());
+            } else {
+                System.out.println("❌ " + result.getMessage());
+            }
+        }
+
+    }
+
+    private static void demonstrateAdapterPattern() {
         System.out.println("\n=== ADAPTER PATTERN ===");
 
         // Używamy starego systemu przez adapter
@@ -1184,6 +1307,263 @@ public class GofRefactoringExamples {
         var stripeProcessor = new StripePaymentProcessor();
         var service2 = new PaymentService(stripeProcessor);
         service2.executePayment("CUST-456", 149.99, "PLN", "Subskrypcja roczna");
+    }
+
+    // ========================================
+    // 8. FACADE PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Klient musi znać wiele złożonych podsystemów
+     * Problemy:
+     * - Klient musi zarządzać wieloma zależnościami
+     * - Skomplikowany kod klienta
+     * - Silne sprzężenie z wieloma klasami
+     * - Trudność w użyciu systemu
+     */
+
+    // Złożone podsystemy
+    static class VideoCodec {
+
+        public void decode(String videoFile) {
+            System.out.println("  [Codec] Dekodowanie pliku wideo: " + videoFile);
+        }
+
+        public void encode(String format) {
+            System.out.println("  [Codec] Kodowanie do formatu: " + format);
+        }
+
+    }
+
+    static class AudioMixer {
+
+        public void extractAudio(String videoFile) {
+            System.out.println("  [Audio] Ekstrakcja ścieżki dźwiękowej z: " + videoFile);
+        }
+
+        public void normalizeAudio() {
+            System.out.println("  [Audio] Normalizacja głośności audio");
+        }
+
+        public void mixAudio(String audioTrack) {
+            System.out.println("  [Audio] Miksowanie ścieżki: " + audioTrack);
+        }
+
+    }
+
+    static class VideoEditor {
+
+        public void cut(int startTime, int endTime) {
+            System.out.println("  [Editor] Wycinanie fragmentu: " + startTime + "s - " + endTime + "s");
+        }
+
+        public void applyFilter(String filter) {
+            System.out.println("  [Editor] Aplikowanie filtra: " + filter);
+        }
+
+        public void adjustBrightness(int level) {
+            System.out.println("  [Editor] Regulacja jasności: " + level + "%");
+        }
+
+    }
+
+    static class VideoRenderer {
+
+        public void renderPreview() {
+            System.out.println("  [Renderer] Renderowanie podglądu...");
+        }
+
+        public void renderFinal(String outputFormat, int quality) {
+            System.out.println("  [Renderer] Renderowanie finalne: " + outputFormat + " (jakość: " + quality + "%)");
+        }
+
+        public void optimize() {
+            System.out.println("  [Renderer] Optymalizacja rozmiaru pliku");
+        }
+
+    }
+
+    static class FileManager {
+
+        public void saveFile(String filename, String path) {
+            System.out.println("  [FileManager] Zapisywanie: " + filename + " do " + path);
+        }
+
+        public void createThumbnail(String videoFile) {
+            System.out.println("  [FileManager] Tworzenie miniaturki dla: " + videoFile);
+        }
+
+    }
+
+    // Klient PRZED - musi zarządzać wszystkimi podsystemami
+    static class ComplexVideoProcessingClientBefore {
+
+        public void processVideo(String inputFile, String outputFile) {
+            // PROBLEM: Klient musi znać szczegóły wszystkich podsystemów
+            VideoCodec codec = new VideoCodec();
+            AudioMixer audio = new AudioMixer();
+            VideoEditor editor = new VideoEditor();
+            VideoRenderer renderer = new VideoRenderer();
+            FileManager fileManager = new FileManager();
+
+            codec.decode(inputFile);
+            audio.extractAudio(inputFile);
+            audio.normalizeAudio();
+            editor.cut(10, 120);
+            editor.applyFilter("Sepia");
+            editor.adjustBrightness(110);
+            renderer.renderPreview();
+            audio.mixAudio("background_music.mp3");
+            codec.encode("MP4");
+            renderer.renderFinal("MP4", 95);
+            renderer.optimize();
+            fileManager.saveFile(outputFile, "/videos/processed/");
+            fileManager.createThumbnail(outputFile);
+        }
+
+    }
+
+    /**
+     * PO: Facade Pattern - prosty interfejs do złożonego systemu
+     * Zalety:
+     * - Uproszczenie interfejsu dla klienta
+     * - Luźne powiązanie między klientem a podsystemami
+     * - Łatwiejsze użycie złożonego systemu
+     * - Możliwość ukrycia szczegółów implementacji
+     */
+    static class VideoProcessingFacade {
+
+        private final VideoCodec codec;
+        private final AudioMixer audio;
+        private final VideoEditor editor;
+        private final VideoRenderer renderer;
+        private final FileManager fileManager;
+
+        public VideoProcessingFacade() {
+            this.codec = new VideoCodec();
+            this.audio = new AudioMixer();
+            this.editor = new VideoEditor();
+            this.renderer = new VideoRenderer();
+            this.fileManager = new FileManager();
+        }
+
+        // Prosty interfejs dla typowych operacji
+        public void convertToMP4(String inputFile, String outputFile) {
+            System.out.println("📹 Konwersja wideo do MP4...");
+            codec.decode(inputFile);
+            codec.encode("MP4");
+            renderer.renderFinal("MP4", 95);
+            fileManager.saveFile(outputFile, "/videos/converted/");
+            System.out.println("✅ Konwersja zakończona!\n");
+        }
+
+        public void createShortClip(String inputFile, String outputFile, int startSec, int endSec) {
+            System.out.println("✂️  Tworzenie krótkiego klipu...");
+            codec.decode(inputFile);
+            audio.extractAudio(inputFile);
+            editor.cut(startSec, endSec);
+            audio.normalizeAudio();
+            renderer.renderFinal("MP4", 90);
+            fileManager.saveFile(outputFile, "/videos/clips/");
+            fileManager.createThumbnail(outputFile);
+            System.out.println("✅ Klip utworzony!\n");
+        }
+
+        public void enhanceVideo(String inputFile, String outputFile, String filter, int brightness) {
+            System.out.println("✨ Ulepszanie jakości wideo...");
+            codec.decode(inputFile);
+            audio.extractAudio(inputFile);
+            audio.normalizeAudio();
+            editor.applyFilter(filter);
+            editor.adjustBrightness(brightness);
+            renderer.renderPreview();
+            codec.encode("MP4");
+            renderer.renderFinal("MP4", 100);
+            renderer.optimize();
+            fileManager.saveFile(outputFile, "/videos/enhanced/");
+            System.out.println("✅ Wideo ulepszone!\n");
+        }
+
+        public void addBackgroundMusic(String inputFile, String musicFile, String outputFile) {
+            System.out.println("🎵 Dodawanie muzyki w tle...");
+            codec.decode(inputFile);
+            audio.extractAudio(inputFile);
+            audio.mixAudio(musicFile);
+            audio.normalizeAudio();
+            codec.encode("MP4");
+            renderer.renderFinal("MP4", 95);
+            fileManager.saveFile(outputFile, "/videos/with_music/");
+            System.out.println("✅ Muzyka dodana!\n");
+        }
+    }
+
+    private static void demonstrateFacadePattern() {
+        System.out.println("\n=== FACADE PATTERN ===");
+
+        var facade = new VideoProcessingFacade();
+
+        // Proste wywołania zamiast zarządzania wieloma podsystemami
+        facade.convertToMP4("vacation.avi", "vacation.mp4");
+        facade.createShortClip("presentation.mp4", "intro.mp4", 0, 30);
+        facade.enhanceVideo("old_movie.mp4", "restored.mp4", "Sharpen", 115);
+    }
+
+    // ========================================
+    // 9. TEMPLATE METHOD PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Duplikacja kodu w podobnych procesach
+     * Problemy:
+     * - Powtarzający się kod w różnych klasach
+     * - Trudność w utrzymaniu spójności
+     * - Naruszenie DRY principle
+     * - Ciężka modyfikacja wspólnej logiki
+     */
+    static class PDFReportGeneratorBefore {
+
+        public void generateReport(String data) {
+            // PROBLEM: Cały proces w jednej metodzie, duplikacja w innych generatorach
+            System.out.println("Otwieranie połączenia z bazą danych...");
+            System.out.println("Pobieranie danych: " + data);
+            System.out.println("Formatowanie danych do PDF");
+            System.out.println("Dodawanie nagłówka PDF");
+            System.out.println("Generowanie treści PDF");
+            System.out.println("Dodawanie stopki PDF");
+            System.out.println("Zapisywanie pliku PDF");
+            System.out.println("Zamykanie połączenia");
+        }
+
+    }
+
+    static class ExcelReportGeneratorBefore {
+        public void generateReport(String data) {
+            // PROBLEM: Ten sam szkielet algorytmu, tylko szczegóły się różnią
+            System.out.println("Otwieranie połączenia z bazą danych...");
+            System.out.println("Pobieranie danych: " + data);
+            System.out.println("Formatowanie danych do Excel");
+            System.out.println("Tworzenie arkusza Excel");
+            System.out.println("Generowanie treści Excel");
+            System.out.println("Dodawanie wykresów");
+            System.out.println("Zapisywanie pliku Excel");
+            System.out.println("Zamykanie połączenia");
+        }
+    }
+
+    /*private static void demonstrateTemplateMethodPattern() {
+        System.out.println("\n=== TEMPLATE METHOD PATTERN ===");
+
+        System.out.println("--- Generowanie raportu PDF ---");
+        var pdfGenerator = new PDFReportGenerator();
+        pdfGenerator.generateReport("Dane sprzedażowe Q4 2025");
+
+        System.out.println("--- Generowanie raportu Excel ---");
+        var excelGenerator = new ExcelReportGenerator();
+        excelGenerator.generateReport("Analiza finansowa");
+
+        System.out.println("--- Generowanie raportu HTML z powiadomieniem ---");
+        var htmlGenerator = new HTMLReportGenerator(true);
+        htmlGenerator.generateReport("Raport online");
     }*/
 
 }
