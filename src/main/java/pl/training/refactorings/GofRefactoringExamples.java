@@ -1,9 +1,15 @@
 package pl.training.refactorings;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 public class GofRefactoringExamples {
 
     public static void main(String[] args) {
-        demonstrateSingletonPattern();
+        //demonstrateSingletonPattern();
+        demonstrateFactoryMethodPattern();
     }
 
     // ========================================
@@ -90,15 +96,15 @@ public class GofRefactoringExamples {
         public void processDocument(String type, String content) {
             // PROBLEM: Logika if-else do tworzenia obiektów
             if (type.equals("PDF")) {
-                PdfDocumentBefore pdf = new PdfDocumentBefore(content);
+                var pdf = new PdfDocumentBefore(content);
                 pdf.open();
                 pdf.render();
             } else if (type.equals("WORD")) {
-                WordDocumentBefore word = new WordDocumentBefore(content);
+                var word = new WordDocumentBefore(content);
                 word.open();
                 word.render();
             } else if (type.equals("HTML")) {
-                HtmlDocumentBefore html = new HtmlDocumentBefore(content);
+                var html = new HtmlDocumentBefore(content);
                 html.open();
                 html.render();
             }
@@ -160,13 +166,202 @@ public class GofRefactoringExamples {
 
     }
 
+    /**
+     * PO: Factory Method Pattern
+     * Zalety:
+     * - Centralizacja logiki tworzenia obiektów
+     * - Łatwe dodawanie nowych typów bez modyfikacji istniejącego kodu
+     * - Zgodność z Open/Closed Principle
+     */
+    interface Document {
+
+        void open();
+
+        void render();
+
+        void close();
+
+    }
+
+    static class PdfDocument implements Document {
+
+        private final String content;
+
+        public PdfDocument(String content) {
+            this.content = content;
+        }
+
+        @Override
+        public void open() {
+            System.out.println("Otwieranie PDF dokumentu...");
+        }
+
+        @Override
+        public void render() {
+            System.out.println("Renderowanie PDF z zawartością: " + content);
+        }
+
+        @Override
+        public void close() {
+            System.out.println("Zamykanie PDF...");
+        }
+
+    }
+
+    static class WordDocument implements Document {
+
+        private final String content;
+
+        public WordDocument(String content) {
+            this.content = content;
+        }
+
+        @Override
+        public void open() {
+            System.out.println("Otwieranie Word dokumentu...");
+        }
+
+        @Override
+        public void render() {
+            System.out.println("Renderowanie Word z zawartością: " + content);
+        }
+
+        @Override
+        public void close() {
+            System.out.println("Zamykanie Word...");
+        }
+
+    }
+
+    static class HtmlDocument implements Document {
+
+        private final String content;
+
+        public HtmlDocument(String content) {
+            this.content = content;
+        }
+
+        @Override
+        public void open() {
+            System.out.println("Otwieranie HTML dokumentu...");
+        }
+
+        @Override
+        public void render() {
+            System.out.println("Renderowanie HTML z zawartością: " + content);
+        }
+
+        @Override
+        public void close() {
+            System.out.println("Zamykanie HTML...");
+        }
+
+    }
+
+    // Abstract Factory definiujący factory method
+    static interface DocumentFactory {
+
+       // Factory Method - podklasy decydują, jaki typ dokumentu utworzyć
+       Document createDocument(String content);
+
+    }
+
+    static class PdfDocumentFactory implements DocumentFactory {
+
+        @Override
+        public Document createDocument(String content) {
+            return new PdfDocument(content);
+        }
+
+    }
+
+    static class WordDocumentFactory implements DocumentFactory {
+
+        @Override
+        public Document createDocument(String content) {
+            return new WordDocument(content);
+        }
+
+    }
+
+    static class HtmlDocumentFactory implements DocumentFactory {
+
+        @Override
+        public Document createDocument(String content) {
+            return new HtmlDocument(content);
+        }
+
+    }
+
     private static void demonstrateFactoryMethodPattern() {
         System.out.println("\n=== FACTORY METHOD PATTERN ===");
-        var pdfFactory = new PdfDocumentFactory();
-        pdfFactory.processDocument("Raport roczny 2025");
+        DocumentFactory documentFactory = new WordDocumentFactory(); // new PdfDocumentFactory();
 
-        var wordFactory = new WordDocumentFactory();
-        wordFactory.processDocument("Dokument biznesowy");
+        var document = documentFactory.createDocument("Raport roczny 2025");
+        document.open();
+        document.render();
+        document.close();
+    }
+
+    // ========================================
+    // 3. STRATEGY PATTERN
+    // ========================================
+
+    /**
+     * PRZED: Algorytmy zakodowane na sztywno w klasie
+     * Problemy:
+     * - Naruszenie Single Responsibility Principle
+     * - Trudność w dodawaniu nowych algorytmów sortowania
+     * - Niemożność zmiany algorytmu w runtime
+     */
+    static class DataSorterBefore {
+
+        public void sortData(List<Integer> data, String algorithm) {
+            // PROBLEM: Cała logika sortowania w jednej klasie
+            if (algorithm.equals("QUICK")) {
+                System.out.println("Sortowanie QuickSort");
+                // Implementacja QuickSort
+                quickSort(data, 0, data.size() - 1);
+            } else if (algorithm.equals("MERGE")) {
+                System.out.println("Sortowanie MergeSort");
+                // Implementacja MergeSort
+                mergeSort(data);
+            } else if (algorithm.equals("BUBBLE")) {
+                System.out.println("Sortowanie BubbleSort");
+                // Implementacja BubbleSort
+                bubbleSort(data);
+            }
+
+        }
+
+        private void quickSort(List<Integer> data, int low, int high) {
+            // Uproszczona implementacja
+            Collections.sort(data);
+        }
+
+        private void mergeSort(List<Integer> data) {
+            Collections.sort(data);
+        }
+
+        private void bubbleSort(List<Integer> data) {
+            Collections.sort(data);
+        }
+
+    }
+
+    private static void demonstrateStrategyPattern() {
+        System.out.println("\n=== STRATEGY PATTERN ===");
+        var data = new ArrayList<>(Arrays.asList(64, 34, 25, 12, 22, 11, 90));
+
+        var sorter = new DataSorterAfter(new QuickSortStrategy());
+        var data1 = new ArrayList<>(data);
+        sorter.sortData(data1);
+        System.out.println("Posortowane dane: " + data1);
+
+        // Zmiana strategii w runtime
+        sorter.setStrategy(new MergeSortStrategy());
+        var data2 = new ArrayList<>(data);
+        sorter.sortData(data2);
     }
 
 }
