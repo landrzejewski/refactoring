@@ -47,12 +47,12 @@ public class ShoppingSystem {
         products.add(p3);
         
         
-        Customer c1 = new Customer("John Doe", "john@email.com", "555-1234",
+        Customer c1 = new Customer("John Doe", new Email("john@email.com"), "555-1234",
                                   "123 Main St", "New York", "NY", "10001",
                                   500, true);
         customers.add(c1);
         
-        Customer c2 = new Customer("Jane Smith", "jane@email.com", "555-5678",
+        Customer c2 = new Customer("Jane Smith", new Email("jane@email.com"), "555-5678",
                                   "456 Oak Ave", "Los Angeles", "CA", "90001",
                                   50, false);
         customers.add(c2);
@@ -67,7 +67,7 @@ public class ShoppingSystem {
             1, 
             p1.price, 
             "credit",
-            c1.email,
+            c1.email.address(),
             c1.premium,
             c1.address
         );
@@ -84,7 +84,7 @@ public class ShoppingSystem {
             5,
             p2.price,
             "debit",
-            c2.email,
+            c2.email.address(),
             c2.premium,
             c2.address
         );
@@ -150,18 +150,8 @@ public class ShoppingSystem {
         
         System.out.println("Discount from Customer class: $" + discount1);
         System.out.println("Discount from Product class: $" + discount2);
-        
-        
-        Customer newCustomer = new Customer("Test User", "invalid-email", 
-                                          "555-0000", "789 Test St", 
-                                          "Chicago", "IL", "60601", 
-                                          0, false);
-        
-        if (!newCustomer.validateEmail()) {
-            System.out.println("Invalid email detected!");
-        }
-        
-        
+
+
         System.out.println("\nTotal orders processed: " + processor.orderCount);
         System.out.println("Total revenue: " + OrderProcessor.formatCurrency(processor.total));
     }

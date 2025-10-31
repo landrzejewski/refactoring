@@ -50,7 +50,7 @@ class ShoppingSystemTest {
         @DisplayName("Should allow adding customers to static list")
         void shouldAllowAddingCustomersToStaticList() {
             Customer customer = new Customer(
-                "John Doe", "john@example.com", "555-1234",
+                "John Doe", new Email("john@example.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -122,13 +122,13 @@ class ShoppingSystemTest {
         @DisplayName("Should create premium customer")
         void shouldCreatePremiumCustomer() {
             Customer c1 = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
 
             assertEquals("John Doe", c1.name);
-            assertEquals("john@email.com", c1.email);
+            assertEquals(new Email("john@email.com"), c1.email);
             assertTrue(c1.premium);
             assertEquals(500, c1.loyaltyPoints);
         }
@@ -137,13 +137,13 @@ class ShoppingSystemTest {
         @DisplayName("Should create regular customer")
         void shouldCreateRegularCustomer() {
             Customer c2 = new Customer(
-                "Jane Smith", "jane@email.com", "555-5678",
+                "Jane Smith", new Email("jane@email.com"), "555-5678",
                 "456 Oak Ave", "Los Angeles", "CA", "90001",
                 50, false
             );
 
             assertEquals("Jane Smith", c2.name);
-            assertEquals("jane@email.com", c2.email);
+            assertEquals("jane@email.com", c2.email.address());
             assertFalse(c2.premium);
             assertEquals(50, c2.loyaltyPoints);
         }
@@ -159,7 +159,7 @@ class ShoppingSystemTest {
         @BeforeEach
         void setUpOrderProcessing() {
             customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -186,7 +186,7 @@ class ShoppingSystemTest {
                 1,
                 product.price,
                 "credit",
-                customer.email,
+                customer.email.address(),
                 customer.premium,
                 customer.address
             );
@@ -209,12 +209,12 @@ class ShoppingSystemTest {
         void shouldMaintainOrderCountAcrossMultipleOrders() {
             ShoppingSystem.processor.processOrder(
                 customer.name, product.name, 1, product.price,
-                "credit", customer.email, customer.premium, customer.address
+                "credit", customer.email.address(), customer.premium, customer.address
             );
 
             ShoppingSystem.processor.processOrder(
                 customer.name, product.name, 1, product.price,
-                "credit", customer.email, customer.premium, customer.address
+                "credit", customer.email.address(), customer.premium, customer.address
             );
 
             assertEquals(2, ShoppingSystem.processor.orderCount);
@@ -237,7 +237,7 @@ class ShoppingSystemTest {
         @DisplayName("Should allow direct access to customers list")
         void shouldAllowDirectAccessToCustomersList() {
             Customer c1 = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -263,7 +263,7 @@ class ShoppingSystemTest {
         @DisplayName("Should share state across all operations")
         void shouldShareStateAcrossAllOperations() {
             Customer customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -277,7 +277,7 @@ class ShoppingSystemTest {
 
             ShoppingSystem.processor.processOrder(
                 customer.name, product.name, 1, product.price,
-                "credit", customer.email, customer.premium, customer.address
+                "credit", customer.email.address(), customer.premium, customer.address
             );
 
             assertEquals(1, ShoppingSystem.customers.size());
@@ -304,7 +304,7 @@ class ShoppingSystemTest {
             ShoppingSystem.products.add(laptop);
 
             Customer customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -352,17 +352,6 @@ class ShoppingSystemTest {
             assertTrue(discount > 0);
         }
 
-        @Test
-        @DisplayName("Should validate email in customer")
-        void shouldValidateEmailInCustomer() {
-            Customer newCustomer = new Customer(
-                "Test User", "invalid-email", "555-0000",
-                "789 Test St", "Chicago", "IL", "60601",
-                0, false
-            );
-
-            assertFalse(newCustomer.validateEmail());
-        }
 
         @Test
         @DisplayName("Should access processor order count")
@@ -381,7 +370,7 @@ class ShoppingSystemTest {
         @BeforeEach
         void setUpReports() {
             Customer customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -400,7 +389,7 @@ class ShoppingSystemTest {
 
             ShoppingSystem.processor.processOrder(
                 customer.name, product.name, 1, product.price,
-                "credit", customer.email, customer.premium, customer.address
+                "credit", customer.email.address(), customer.premium, customer.address
             );
         }
 
@@ -435,14 +424,14 @@ class ShoppingSystemTest {
         @DisplayName("Should display customer information")
         void shouldDisplayCustomerInformation() {
             Customer customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
             ShoppingSystem.customers.add(customer);
 
             assertEquals("John Doe", customer.name);
-            assertEquals("john@email.com", customer.email);
+            assertEquals(new Email("john@email.com"), customer.email);
             assertTrue(customer.premium);
             assertEquals(500, customer.loyaltyPoints);
         }
@@ -451,7 +440,7 @@ class ShoppingSystemTest {
         @DisplayName("Should retrieve last order")
         void shouldRetrieveLastOrder() {
             Customer customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -464,7 +453,7 @@ class ShoppingSystemTest {
         @DisplayName("Should return null for customer with no orders")
         void shouldReturnNullForCustomerWithNoOrders() {
             Customer customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -542,7 +531,7 @@ class ShoppingSystemTest {
         @DisplayName("Should handle multiple orders for same customer")
         void shouldHandleMultipleOrdersForSameCustomer() {
             Customer customer = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
@@ -560,12 +549,12 @@ class ShoppingSystemTest {
 
             ShoppingSystem.processor.processOrder(
                 customer.name, product1.name, 1, product1.price,
-                "credit", customer.email, customer.premium, customer.address
+                "credit", customer.email.address(), customer.premium, customer.address
             );
 
             ShoppingSystem.processor.processOrder(
                 customer.name, product2.name, 1, product2.price,
-                "credit", customer.email, customer.premium, customer.address
+                "credit", customer.email.address(), customer.premium, customer.address
             );
 
             assertEquals(2, ShoppingSystem.processor.orderCount);
@@ -575,13 +564,13 @@ class ShoppingSystemTest {
         @DisplayName("Should handle orders from different customers")
         void shouldHandleOrdersFromDifferentCustomers() {
             Customer customer1 = new Customer(
-                "John Doe", "john@email.com", "555-1234",
+                "John Doe", new Email("john@email.com"), "555-1234",
                 "123 Main St", "New York", "NY", "10001",
                 500, true
             );
 
             Customer customer2 = new Customer(
-                "Jane Smith", "jane@email.com", "555-5678",
+                "Jane Smith", new Email("jane@email.com"), "555-5678",
                 "456 Oak Ave", "Los Angeles", "CA", "90001",
                 50, false
             );
@@ -596,12 +585,12 @@ class ShoppingSystemTest {
 
             ShoppingSystem.processor.processOrder(
                 customer1.name, product.name, 1, product.price,
-                "credit", customer1.email, customer1.premium, customer1.address
+                "credit", customer1.email.address(), customer1.premium, customer1.address
             );
 
             ShoppingSystem.processor.processOrder(
                 customer2.name, product.name, 1, product.price,
-                "debit", customer2.email, customer2.premium, customer2.address
+                "debit", customer2.email.address(), customer2.premium, customer2.address
             );
 
             assertEquals(2, ShoppingSystem.processor.orderCount);

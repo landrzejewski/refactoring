@@ -4,33 +4,27 @@ import java.util.*;
 
 
 public class Customer {
-    
-    
-    public String name;
-    public String email;
-    public String phone;
-    public String address;
-    public String city;
-    public String state;
-    public String zip;
-    public int loyaltyPoints;
-    public boolean premium;
-    public List<String> orderHistory;
-    
-    
-    public Customer(String name, String email, String phone, String address, 
-                   String city, String state, String zip, int loyaltyPoints, 
-                   boolean premium) {
+
+    private String name;
+    private Email email;
+    private Phone phone;
+    private Address address;
+    private int loyaltyPoints;
+    private boolean premium;
+    private final List<String> orderHistory = new ArrayList<>();
+
+    public Customer(String name, Email email, Phone phone, Address address) {
         this.name = name;
         this.email = email;
         this.phone = phone;
         this.address = address;
-        this.city = city;
-        this.state = state;
-        this.zip = zip;
-        this.loyaltyPoints = loyaltyPoints;
-        this.premium = premium;
-        this.orderHistory = new ArrayList<>();
+    }
+
+    public void addLoyaltyPoints(int newPoints) {
+        if (newPoints <= 0) {
+            throw new IllegalArgumentException("New points must be positive");
+        }
+        loyaltyPoints += newPoints;
     }
     
     
@@ -64,41 +58,8 @@ public class Customer {
         System.out.println("Saving customer " + name + " to database...");
         
     }
-    
-    
-    public boolean validateEmail() {
-        if (email == null || email.isEmpty()) {
-            return false;
-        }
-        if (!email.contains("@")) {
-            return false;
-        }
-        String[] parts = email.split("@");
-        if (parts.length != 2) {
-            return false;
-        }
-        if (!parts[1].contains(".")) {
-            return false;
-        }
-        return true;
-    }
-    
-    
-    public String getFormattedAddress() {
-        String result = address + "\n";
-        result += city + ", " + state + " " + zip;
-        return result;
-    }
-    
-    
-    public String getDisplayName() {
-        String[] nameParts = name.split(" ");
-        if (nameParts.length > 1) {
-            return nameParts[0] + " " + nameParts[nameParts.length - 1];
-        }
-        return name;
-    }
-    
+
+
     
     public String getLastOrder() {
         if (orderHistory.isEmpty()) {
